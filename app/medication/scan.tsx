@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import { type CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { Camera, X } from "lucide-react-native";
 import { useRef, useState } from "react";
