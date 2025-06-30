@@ -1,29 +1,30 @@
-// app/(auth)/login.tsx
+// app/(auth)/signup.tsx
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import Button from '../../components/ui/Button'
 import { useAuthStore } from '../../utils/auth'
 
-export default function LoginScreen() {
+export default function SignupScreen() {
   const router = useRouter()
-  const { login, isLoading } = useAuthStore()
+  const { signup, isLoading } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = async () => {
-    const { error } = await login(email.trim(), password)
+  const handleSignup = async () => {
+    const { error } = await signup(email.trim(), password)
     if (error) {
-      Alert.alert('Login Failed', error)
+      Alert.alert('Signup Failed', error)
     } else {
-      router.replace('/(tabs)')
+      Alert.alert('Success', 'Check your email for confirmation.')
+      router.replace('/(auth)/login')
     }
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.title}>Create your account</Text>
       <TextInput
         placeholder="Email"
         autoCapitalize="none"
@@ -39,9 +40,9 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Login" onPress={handleLogin} disabled={isLoading} />
-      <Text style={styles.link} onPress={() => router.push('/(auth)/signup')}>
-        Don&apos;t have an account? Sign up
+      <Button title="Sign Up" onPress={handleSignup} disabled={isLoading} />
+      <Text style={styles.link} onPress={() => router.push('/(auth)/login')}>
+        Already have an account? Log in
       </Text>
     </View>
   )

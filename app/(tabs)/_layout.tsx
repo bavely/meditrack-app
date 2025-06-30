@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Tabs, useRouter } from "expo-router";
 import { Calendar, Home, MessageSquare, PlusCircle, User } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";

@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { Text, View } from "react-native";
 import 'react-native-reanimated';
 import "../global.css";
@@ -10,11 +11,18 @@ import { useAuthStore } from "../utils/auth";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading , user} = useAuthStore();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-console.log("RootLayout isAuthenticated:", isAuthenticated);
+  useEffect(() => {
+    console.log("RootLayout useEffect isAuthenticated:", isAuthenticated);
+    if (isAuthenticated) {
+      // Initialize auth state if not authenticated
+      console.log("User is not authenticated, initializing auth state.", user);
+    }
+  }, [isAuthenticated]);
+
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
