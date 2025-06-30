@@ -1,5 +1,11 @@
 // Auth0 configuration
-
+export const auth0Config = {
+  domain: "dev-agu00qti8bfvpoxi.us.auth0.com",
+  clientId: "XvHvdOxxSOproUNIDgukyNTRdu3WY987", // Replace with your actual Auth0 client ID
+  audience: "https://api.meditrack.com",
+  scope: "openid profile email offline_access",
+  redirectUri: "exp://192.168.50.5:8081",
+};
 
 // Auth0 endpoints
 export const auth0Endpoints = {
