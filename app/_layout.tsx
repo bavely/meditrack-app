@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { ApolloProvider } from '@apollo/client';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -7,8 +8,8 @@ import { useEffect } from 'react';
 import { Text, View } from "react-native";
 import 'react-native-reanimated';
 import "../global.css";
-import { useAuthStore } from "../utils/auth";
-
+import { useAuthStore } from "../store/auth-store";
+import { apolloClient } from '../utils/apollo';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { isAuthenticated, isLoading , user} = useAuthStore();
@@ -37,6 +38,7 @@ if (isLoading) {
   )
 }
   return (
+     <ApolloProvider client={apolloClient}>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         { isAuthenticated ? <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> : <Stack.Screen name="(auth)" options={{ headerShown: false }} />}
@@ -44,5 +46,6 @@ if (isLoading) {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </ApolloProvider>
   );
 }

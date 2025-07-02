@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import Button from '../../components/ui/Button'
-import { useAuthStore } from '../../utils/auth'
+import { useAuthStore } from '../../store/auth-store'
 
 export default function LoginScreen() {
   const router = useRouter()

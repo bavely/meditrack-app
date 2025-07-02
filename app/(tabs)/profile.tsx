@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { Bell, Clock, HelpCircle, LogOut, Moon, Shield } from "lucide-react-native";
 import React from "react";
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
-import { useAuthStore } from "../../utils/auth";
+import { useAuthStore } from "../../store/auth-store";
 
 export default function ProfileScreen() {
   const [notifications, setNotifications] = React.useState(true);
@@ -31,9 +31,9 @@ export default function ProfileScreen() {
   
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user || !user.name) return "?";
+    if (!user || !user.email) return "?";
     
-    const nameParts = user.name.split(" ");
+    const nameParts = user.email.split(" ");
     if (nameParts.length >= 2) {
       return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
     }
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
         </View>
         
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{user?.name || "User"}</Text>
+          <Text style={styles.profileName}>{user?.email || "User"}</Text>
           <Text style={styles.profileEmail}>{user?.email || ""}</Text>
         </View>
       </View>

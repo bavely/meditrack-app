@@ -1,7 +1,7 @@
 // utils/auth.ts
 import { Session, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
-import { supabase } from './supabase'
+import { supabase } from '../utils/supabase'
 
 interface AuthState {
   user: User | null
