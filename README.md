@@ -27,6 +27,7 @@ meditrack-app/
 ├── app/                     # Expo Router app directory
 │   ├── (auth)/             # Login, callback screens
 │   ├── (tabs)/             # Dashboard, Scan, Chat, Profile tabs
+│   ├── medication/         # Medication screens
 │   └── _layout.tsx         # Root layout w/ navigation
 ├── components/             # Reusable UI components
 ├── context/                # Global providers (e.g., Auth context)
