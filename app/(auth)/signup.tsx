@@ -13,7 +13,8 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('')
 
   const handleSignup = async () => {
-    const { error } = await signup(email.trim(), password)
+    const { error, supaUser } = await signup(email.trim(), password)
+    console.log('Signup result:', JSON.stringify(supaUser), error)
     if (error) {
       Alert.alert('Signup Failed', error)
     } else {

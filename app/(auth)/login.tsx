@@ -3,17 +3,24 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import Button from '../../components/ui/Button'
+import { getUserProfile } from "../../services/userService"
 import { useAuthStore } from '../../store/auth-store'
-
 export default function LoginScreen() {
   const router = useRouter()
-  const { login, isLoading } = useAuthStore()
+  const { login, isLoading, user, setUser } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
-    const { error } = await login(email.trim(), password)
+    const { error, supaUser } = await login(email.trim(), password)
+    console.log('Login result:', JSON.stringify(supaUser) , error )
+    if (supaUser) {
+      // Fetch user profile after login
+      const profile = await getUserProfile()
+      console.log('User profile:', profile)
+      setUser(profile)
+    }
     if (error) {
       Alert.alert('Login Failed', error)
     } else {

@@ -1,17 +1,19 @@
 // utils/auth.ts
+import { LocalUser } from '@/types/user'
 import { Session, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { supabase } from '../utils/supabase'
-
 interface AuthState {
-  user: User | null
+  supaUser: User | null
+  user: LocalUser | null
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
   init: () => Promise<void>
-  login: (email: string, password: string) => Promise<{ error: string | null }>
-  signup: (email: string, password: string) => Promise<{ error: string | null }>
+  login: (email: string, password: string) => Promise<{ error: string | null, supaUser: User | null }>
+  signup: (email: string, password: string) => Promise<{ error: string | null, supaUser: User | null }>
   logout: () => Promise<void>
+  setUser: (user: LocalUser | null) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -19,6 +21,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   isLoading: true,
   isAuthenticated: false,
+  supaUser: null,
+  setUser: (user) => set({ user }),
 
   init: async () => {
     const {
@@ -28,15 +32,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (error) {
       console.error('Auth init error:', error.message)
-      set({ user: null, session: null, isLoading: false, isAuthenticated: false })
+      set({supaUser: null, user: null, session: null, isLoading: false, isAuthenticated: false })
       return
     }
 
-    set({ session, user: session?.user ?? null, isLoading: false, isAuthenticated: !!session?.user })
+    set({ session, isLoading: false, isAuthenticated: !!session?.user, supaUser: session?.user })
 
     // Listen to auth changes
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null, isAuthenticated: !!session?.user })
+      set({ session, isAuthenticated: !!session?.user, supaUser: session?.user })
     })
   },
 
@@ -48,31 +52,33 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (error) {
       console.error('Login error:', error.message)
-      return { error: error.message }
+      return { error: error.message, supaUser: null}
     }
 
-    set({ session: data.session, user: data.user, isAuthenticated: true })
-    return { error: null }
+    set({ session: data.session, isAuthenticated: true, supaUser: data.user })
+    return { error: null, supaUser: data.user}
   },
 
   signup: async (email, password) => {
     const { error, data } = await supabase.auth.signUp({
+
       email,
       password,
+      
     })
 
     if (error) {
       console.error('Signup error:', error.message)
-      return { error: error.message }
+      return { error: error.message , supaUser: null}
     }
 
-    set({ session: data.session, user: data.user, isAuthenticated: true })
-    return { error: null }
+    set({ session: data.session, isAuthenticated: true, supaUser: data.user })
+    return { error: null, supaUser: data.user }
   },
 
   logout: async () => {
     await supabase.auth.signOut()
-    set({ session: null, user: null, isAuthenticated: false, isLoading: false })
+    set({ session: null, user: null, isAuthenticated: false, isLoading: false, supaUser: null })
   },
 }))
 
