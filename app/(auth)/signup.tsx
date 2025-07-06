@@ -1,31 +1,46 @@
 // app/(auth)/signup.tsx
-import { useRouter } from 'expo-router'
-import { useState } from 'react'
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
-import Button from '../../components/ui/Button'
-import { useAuthStore } from '../../store/auth-store'
-
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
+import Button from "../../components/ui/Button";
+import { useAuthStore } from "../../store/auth-store";
 export default function SignupScreen() {
-  const router = useRouter()
-  const { signup, isLoading } = useAuthStore()
+  const router = useRouter();
+  const { signup, isLoading,  } = useAuthStore();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
 
+
+  
   const handleSignup = async () => {
-    const { error, supaUser } = await signup(email.trim(), password)
-    console.log('Signup result:', JSON.stringify(supaUser), error)
-    if (error) {
-      Alert.alert('Signup Failed', error)
-    } else {
-      Alert.alert('Success', 'Check your email for confirmation.')
-      router.replace('/(auth)/login')
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
     }
-  }
+    const { error, supaUser } = await signup(email.trim(), password);
+
+    if (error) {
+      Alert.alert("Signup Failed", error);
+      return;
+    }
+
+    if (supaUser) {
+      router.replace("/(auth)/login");
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create your account</Text>
+      <TextInput
+        placeholder="Name"
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+      />
       <TextInput
         placeholder="Email"
         autoCapitalize="none"
@@ -41,23 +56,30 @@ export default function SignupScreen() {
         value={password}
         onChangeText={setPassword}
       />
+      <TextInput
+        placeholder="Confirm Password"
+        secureTextEntry
+        style={styles.input}
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+      />
       <Button title="Sign Up" onPress={handleSignup} disabled={isLoading} />
-      <Text style={styles.link} onPress={() => router.push('/(auth)/login')}>
+      <Text style={styles.link} onPress={() => router.push("/(auth)/login")}>
         Already have an account? Log in
       </Text>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, flex: 1, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  container: { padding: 24, flex: 1, justifyContent: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
   },
-  link: { marginTop: 16, color: 'blue', textAlign: 'center' },
-})
+  link: { marginTop: 16, color: "blue", textAlign: "center" },
+});

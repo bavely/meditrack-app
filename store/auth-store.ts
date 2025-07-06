@@ -30,17 +30,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       error,
     } = await supabase.auth.getSession()
 
+    console.log('Auth init session:', session)
+
     if (error) {
       console.error('Auth init error:', error.message)
       set({supaUser: null, user: null, session: null, isLoading: false, isAuthenticated: false })
       return
     }
 
-    set({ session, isLoading: false, isAuthenticated: !!session?.user, supaUser: session?.user })
+    set({ session, isLoading: false, isAuthenticated: !!session, supaUser: session?.user })
 
     // Listen to auth changes
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, isAuthenticated: !!session?.user, supaUser: session?.user })
+      set({ session, isAuthenticated: !!session, supaUser: session?.user })
     })
   },
 
@@ -72,7 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return { error: error.message , supaUser: null}
     }
 
-    set({ session: data.session, isAuthenticated: true, supaUser: data.user })
+    set({ session: data.session, isAuthenticated: false, supaUser: data.user })
     return { error: null, supaUser: data.user }
   },
 

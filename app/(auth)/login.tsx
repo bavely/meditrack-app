@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import Button from '../../components/ui/Button'
-import { getUserProfile } from "../../services/userService"
+import { getViewerProfile } from "../../services/userService"
 import { useAuthStore } from '../../store/auth-store'
 export default function LoginScreen() {
   const router = useRouter()
@@ -16,10 +16,12 @@ export default function LoginScreen() {
     const { error, supaUser } = await login(email.trim(), password)
     console.log('Login result:', JSON.stringify(supaUser) , error )
     if (supaUser) {
+      console.log('User logged in ===================================================================================>:', supaUser.id)
       // Fetch user profile after login
-      const profile = await getUserProfile()
+      const profile = getViewerProfile()
+      // await getUserProfile(supaUser.id)
       console.log('User profile:', profile)
-      setUser(profile)
+      // setUser(profile)
     }
     if (error) {
       Alert.alert('Login Failed', error)

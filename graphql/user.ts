@@ -2,8 +2,8 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_USER = gql`
-  mutation CreateUser($input: CreateUserInput!) {
-    createUser(input: $input) {
+  mutation RegisterUser($input: CreateUserInput!) {
+    registerUser(input: $input) {
       id
       email
       name
@@ -12,13 +12,14 @@ export const CREATE_USER = gql`
   }
 `;
 
-export const GET_USER_PROFILE = gql`
-  query GetUserProfile {
-    me {
+
+export const GET_VIEWER = gql`
+  query Profile {
+    profile {
       id
-      name
       email
-      picture
+      name
+      phoneNumber
       createdAt
     }
   }
