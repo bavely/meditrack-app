@@ -1,31 +1,19 @@
-// lib/apollo.ts
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { GRAPHQL_API_URL } from './env'; // Ensure this exports your GraphQL API URL
-import { supabase } from './supabase'; // Make sure this exports your Supabase client
-
-console.log('GRAPHQL_API_URL:', GRAPHQL_API_URL);
-
-const httpLink = createHttpLink({
-  uri: GRAPHQL_API_URL,
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GRAPHQL_API_URL } from './env';
+//consolelog('GraphQL API URL:', GRAPHQL_API_URL);
+const http = createHttpLink({ uri: GRAPHQL_API_URL });
+const authLink = setContext(async () => {
+  const token =  await AsyncStorage.getItem('accessToken');
+  if (!token) {
+    //consolewarn('No access token found in AsyncStorage');
+  }
+  //consolelog('Using access token:', token);
+  return { headers: { authorization: token ? `Bearer ${token}` : '' } };
 });
 
-const authLink = setContext(async (_, { headers }) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-console.log('Supabase session:', session);
-  const token = session?.access_token || '';
-  console.log('Supabase session token:', token);
-  
-  return {
-    headers : {
-      ...headers,
-      Authorization: `Bearer ${token}`,},
-  };
-});
-console.log('Supabase session authLink:', authLink);
 export const apolloClient = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: authLink.concat(http),
   cache: new InMemoryCache(),
 });

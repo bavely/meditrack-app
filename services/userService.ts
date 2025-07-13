@@ -1,4 +1,4 @@
-import { CREATE_USER, GET_VIEWER } from '../graphql/user';
+import { CREATE_USER, GET_VIEWER, LOGIN_USER, RESET_PASSWORD } from '../graphql/user';
 import { apolloClient as client } from '../utils/apollo';
 
 
@@ -10,8 +10,20 @@ export const createUser = async (input: any) => {
   });
   return data.registerUser;
 } catch (error) {
-  console.error('Error creating user:', error);
-  throw new Error('Failed to create user');
+  throw new Error(JSON.stringify(error));
+}
+};
+
+export const loginUser = async (email: string, password: string) => {
+ 
+  try{
+  const { data } = await client.mutate({
+    mutation: LOGIN_USER,
+    variables: {  email, password  },
+  });
+  return data.login;
+} catch (error) {
+  throw new Error(JSON.stringify(error));
 }
 };
 
@@ -23,9 +35,22 @@ export const getViewerProfile = async () => {
     fetchPolicy: 'network-only',
   });
 
-  return data;
+  return data.getUser;
 } catch (error) {
-  console.error('Error fetching viewer profile:', error);
-  throw new Error('Failed to fetch viewer profile');
+  throw new Error(JSON.stringify(error));
+}
+};
+
+
+export const resetPassword = async (email: string) => {
+  console.log('Resetting password for:', email);
+  try{
+  const { data } = await client.mutate({
+    mutation: RESET_PASSWORD,
+    variables: { email },
+  });
+  return data.forgotPassword;
+} catch (error) {
+  throw new Error(JSON.stringify(error));
 }
 };

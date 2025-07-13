@@ -42,7 +42,7 @@ export default function ScanMedicationScreen() {
         },
       });
     } catch (error) {
-      console.error("Error taking picture:", error);
+      //consoleerror("Error taking picture:", error);
       setIsTakingPicture(false);
       setIsProcessing(false);
     }

@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { useRouter } from 'expo-router';
 import { Bell, Clock, HelpCircle, LogOut, Moon, Shield } from "lucide-react-native";
 import React from "react";
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
@@ -8,7 +9,7 @@ export default function ProfileScreen() {
   const [notifications, setNotifications] = React.useState(true);
   const [darkMode, setDarkMode] = React.useState(false);
   const { user, logout } = useAuthStore();
-  
+  const router = useRouter();
   const handleLogout = async () => {
     Alert.alert(
       "Log Out",
@@ -23,6 +24,8 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await logout();
+            // Navigate to login screen
+            router.push("/(auth)/login");
           },
         },
       ]

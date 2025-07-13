@@ -3,32 +3,43 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import Button from '../../components/ui/Button'
-import { getViewerProfile } from "../../services/userService"
 import { useAuthStore } from '../../store/auth-store'
 export default function LoginScreen() {
   const router = useRouter()
-  const { login, isLoading, user, setUser } = useAuthStore()
+  const { login, isLoading, isAuthenticated } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const handleLogin = async () => {
-    const { error, supaUser } = await login(email.trim(), password)
-    console.log('Login result:', JSON.stringify(supaUser) , error )
-    if (supaUser) {
-      console.log('User logged in ===================================================================================>:', supaUser.id)
-      // Fetch user profile after login
-      const profile = getViewerProfile()
-      // await getUserProfile(supaUser.id)
-      console.log('User profile:', profile)
-      // setUser(profile)
+    const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      return Alert.alert('Error', 'Please fill in both email and password.');
     }
-    if (error) {
-      Alert.alert('Login Failed', error)
-    } else {
-      router.replace('/(tabs)')
+
+    setSubmitLoading(true);
+    try {
+      await login(email.trim(), password);
+      if (!isAuthenticated) {
+        router.replace('/(tabs)');
+      }
+      
+    } catch (err: unknown) {
+      let message = 'An unexpected error occurred. Please try again.';
+      if (err instanceof Error) {
+        message = err.message;
+        if (err.message.includes('graphQLErrors')) {
+          const parsedError = JSON.parse(err.message);
+          if (parsedError.graphQLErrors && parsedError.graphQLErrors.length > 0) {
+            message = parsedError.graphQLErrors[0].message;
+          }
+        }
+      }
+      Alert.alert('Login Failed', message);
+    } finally {
+      setSubmitLoading(false);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -48,9 +59,12 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Login" onPress={handleLogin} disabled={isLoading} />
+      <Button title="Login" onPress={handleLogin} disabled={isLoading || submitLoading} />
       <Text style={styles.link} onPress={() => router.push('/(auth)/signup')}>
         Don&apos;t have an account? Sign up
+      </Text>
+      <Text style={styles.link} onPress={() => router.push('/(auth)/forgot-password')}>
+        Forgot password?
       </Text>
     </View>
   )
