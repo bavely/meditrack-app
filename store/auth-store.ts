@@ -3,15 +3,16 @@ import { LocalUser } from '@/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createUser, getViewerProfile, loginUser } from '../services/userService';
+import { getViewerProfile } from '../services/userService';
 interface AuthState {
+  // init: any;
   user: LocalUser | null
-  isLoading: boolean
+  // isLoading: boolean
   isAuthenticated: boolean
   accessToken: string | null
   refreshToken: string | null
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, name: string, phoneNumber: string, role: string, aud: string) => Promise<void>
+  login: (email: string, password: string) => Promise<any>
+  signup: (accessToken: string, refreshToken: string) => Promise<void>
   logout: () => Promise<void>
   setUser: (user: LocalUser | null) => void
 }
@@ -20,69 +21,74 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      isLoading: false,
+      // isLoading: false,
       isAuthenticated: false,
       accessToken: null,
       refreshToken: null,
       // In your auth store:
-      login: async (email: string, password: string) => {
-        set({ isLoading: true });
-        try {
-          const { accessToken, refreshToken } = await loginUser(email, password);
-          await AsyncStorage.setItem('accessToken', accessToken);
-          await AsyncStorage.setItem('refreshToken', refreshToken);
+      // init: async () => {
+      // set({
+      //   isLoading: false
+      // });
+      // },
 
-          const user = await getViewerProfile();
+      login: async (accessToken: string, refreshToken: string) => {
 
-          if (!user) {
-            throw new Error('Could not load your profile. Please try again.');
-          }
-          if (!user.emailVerified) {
-            throw new Error(
-              'Please verify your email before signing in. Check your inbox for a verification link.'
-            );
-          }
 
-          set({
-            accessToken,
-            refreshToken,
-            user,
-            isAuthenticated: true,
-          });
-        } finally {
-          set({ isLoading: false });
+
+        await AsyncStorage.setItem('accessToken', accessToken);
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+
+        const userresonse = await getViewerProfile();
+
+        const user = userresonse.data.getUser.data;
+
+        if (!user) {
+          throw new Error('Could not load your profile. Please try again.');
+
         }
+        if (!user.emailVerified) {
+          throw new Error(
+            'Please verify your email before signing in. Check your inbox for a verification link.'
+          );
+        }
+
+        set({
+          accessToken,
+          refreshToken,
+          user,
+          isAuthenticated: !!accessToken && !!refreshToken && user.emailVerified,
+        });
+
       },
 
-      signup: async (email: string, password: string, name: string, phoneNumber: string, role: string, aud: string) => {
-        set({ isLoading: true });
+      signup: async (accessToken: string, refreshToken: string) => {
         try {
-          const { accessToken, refreshToken } = await createUser({ email, password, name, phoneNumber, role, aud });
 
           await AsyncStorage.setItem('accessToken', accessToken);
           await AsyncStorage.setItem('refreshToken', refreshToken);
-          const user = await getViewerProfile();
-
+          const userresonse = await getViewerProfile();
+          let user = userresonse.data.getUser.data
+          console.log('User response:', user);
           if (!user || !accessToken || !refreshToken) {
             throw new Error('Login failed, Please try again later.');
           }
-          if (!user.emailVerified) {
-            throw new Error('Please verify your email to access the app. Check your inbox for a verification link.');
-          }
+          // if (!user.emailVerified) {
+          //   throw new Error('Please verify your email to access the app. Check your inbox for a verification link.');
+          // }
           set({
             accessToken,
             refreshToken,
             isAuthenticated: user.emailVerified,
-            isLoading: false
+            user
           });
-          set({ user });
-        }  finally {
+        } finally {
           // ensure loading flag is always reset
-          set({ isLoading: false });
+
         }
       },
       logout: async () => {
-        set({ isLoading: true });
+
         try {
           await AsyncStorage.removeItem('accessToken');
           await AsyncStorage.removeItem('refreshToken');
@@ -91,10 +97,10 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             accessToken: null,
             refreshToken: null,
-            isLoading: false
+            // isLoading: false
           });
-        }  finally {
-          set({ isLoading: false });
+        } finally {
+
         }
       },
       setUser: (user: LocalUser | null) => {
@@ -104,10 +110,13 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => AsyncStorage)
+      storage: createJSONStorage(() => AsyncStorage),
+
     }
-  )
+
+  ),
+
 )
 
 // Auto-init on load
-
+// useAuthStore.getState().init()

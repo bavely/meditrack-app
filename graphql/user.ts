@@ -4,8 +4,19 @@ import { gql } from '@apollo/client';
 export const CREATE_USER = gql`
   mutation RegisterUser($input: CreateUserInput!) {
     registerUser(input: $input) {
-    accessToken
-    refreshToken
+   success
+   errors {
+     field
+     message
+   }
+   data {
+     accessToken
+     refreshToken
+     user {
+      id
+      email
+     }
+   }
     }
   }
 `;
@@ -13,8 +24,19 @@ export const CREATE_USER = gql`
 export const LOGIN_USER = gql`
   mutation Login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
-    accessToken
-    refreshToken
+   success
+   errors {
+     field
+     message
+   }
+   data {
+     accessToken
+     refreshToken
+     user {
+      id
+      email
+     }
+   }
     }
   }
 `;
@@ -23,7 +45,13 @@ export const LOGIN_USER = gql`
 export const GET_VIEWER = gql`
   query GetUser {
     getUser {
-    id
+   success
+   errors {
+     field
+     message
+   }
+   data {
+     id
     aud
     role
     email
@@ -33,6 +61,7 @@ export const GET_VIEWER = gql`
     phoneVerified
     createdAt
     updatedAt
+   }
     }
   }
 `;
@@ -40,6 +69,15 @@ export const GET_VIEWER = gql`
 
 export const RESET_PASSWORD = gql`
   mutation ForgotPassword($email: String!) {
-    forgotPassword(email: $email)
+    forgotPassword(email: $email){
+    success
+    errors {
+      field
+      message
+    }
+    data {
+      message
+    }
+  }
   }
 `;

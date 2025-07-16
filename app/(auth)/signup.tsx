@@ -1,60 +1,101 @@
 // app/(auth)/signup.tsx
+import { ApolloError } from "@apollo/client";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import Button from "../../components/ui/Button";
+import { createUser } from "../../services/userService";
 import { useAuthStore } from "../../store/auth-store";
 export default function SignupScreen() {
   const router = useRouter();
-  const { isLoading, signup, isAuthenticated } = useAuthStore();
- const [submitLoading, setSubmitLoading] = useState(false);
+  const { signup } = useAuthStore();
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
-
+  const [userMsg, setUserMsg] = useState({ type: "", message: "" });
   const handleSignup = async () => {
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
+      setUserMsg({
+        type: "error",
+        message: "Passwords do not match.",
+      });
       return;
     }
 
     if (!email || !password || !name) {
-      Alert.alert("Error", "Please fill in all fields.");
+      setUserMsg({
+        type: "error",
+        message: "Please fill in all fields.",
+      });
       return;
     }
-  setSubmitLoading(true);
+    setSubmitLoading(true);
     try {
-      await signup(
+      const response = await createUser({
         email,
         password,
         name,
-        "",
-        "user",
-        "authenticated"
-      );
-     
-        router.push("/(auth)/login");
-   
-    } catch (err: unknown) {
-      let message = 'An unexpected error occurred. Please try again.';
-      if (err instanceof Error) {
-        message = err.message;
-        if (err.message.includes('graphQLErrors')) {
-          const parsedError = JSON.parse(err.message);
-          if (parsedError.graphQLErrors && parsedError.graphQLErrors.length > 0) {
-            message = parsedError.graphQLErrors[0].message;
-          }
-        }
+        phoneNumber: "",
+        role: "user",
+        aud: "authenticated",
+      });
+      const { accessToken, refreshToken } = response.data.registerUser.data;
+      if (
+        !accessToken ||
+        !refreshToken ||
+        !response.data.registerUser.success
+      ) {
+        setUserMsg({
+          type: "error",
+          message: "Login failed. Please try again.",
+        });
+        setSubmitLoading(false);
+        return;
       }
-      Alert.alert('Sign Up Failed', message);
-    } finally {
+      await signup(accessToken, refreshToken);
+      setSubmitLoading(false);
+      setUserMsg({
+        type: "warning",
+        message:
+          "Your account has been created. Please check your email for a verification link to be able to sign in. You will be redirected to the login page in 5 seconds.",
+      });
+      setTimeout(() => {
+        router.push("/(auth)/login");
+      }, 5000);
+    } catch (err) {
+      if (err instanceof ApolloError) {
+        if (err.graphQLErrors && err.graphQLErrors.length > 0) {
+          setUserMsg({
+            type: "error",
+            message: err.graphQLErrors[0].message,
+          });
+        }
+      } else if (err instanceof Error) {
+        setUserMsg({
+          type: "error",
+          message: err.message,
+        });
+      } else {
+        setUserMsg({
+          type: "error",
+          message: "An unexpected error occurred. Please try again.",
+        });
+      }
       setSubmitLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
+      {userMsg.type !== "" && (
+        <Text
+          className={`${userMsg.type === "success" ? "text-[green]" : userMsg.type === "error" ? "text-[red]" : "text-[orange]"}`}
+        >
+          {userMsg.message}
+        </Text>
+      )}
       <Text style={styles.title}>Create your account</Text>
       <TextInput
         placeholder="Name"
@@ -84,7 +125,7 @@ export default function SignupScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
       />
-      <Button title="Sign Up" onPress={handleSignup} disabled={isLoading || submitLoading} />
+      <Button title="Sign Up" onPress={handleSignup} disabled={submitLoading} />
       <Text style={styles.link} onPress={() => router.push("/(auth)/login")}>
         Already have an account? Log in
       </Text>
