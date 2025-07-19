@@ -1,14 +1,31 @@
 // app/(auth)/login.tsx
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { ApolloError } from "@apollo/client";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import Button from "../../components/ui/Button";
+import {
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableWithoutFeedback,
+} from "react-native";
+import { Button, Text, TextInput } from 'react-native-paper';
 import { loginUser } from "../../services/userService";
 import { useAuthStore } from "../../store/auth-store";
+
 export default function LoginScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
-  const { login, isAuthenticated } = useAuthStore();
+  const { login } = useAuthStore();
+  const [hidePassword, setHidePassword] = useState(true);
+  const bgcolor =
+    colorScheme === "light" ? Colors.light.background : Colors.dark.background;
+  const textcolor =
+    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
 
   const [userMsg, setUserMsg] = useState({ type: "", message: "" });
   const [email, setEmail] = useState("");
@@ -70,53 +87,93 @@ export default function LoginScreen() {
   };
   console.log("userMsg:", userMsg);
   return (
-    <View style={styles.container}>
-      {userMsg.type !== "" && (
-        <Text
-          className={`${userMsg.type === "success" ? "text-[green]" : "text-[red]"}`}
+   <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.container,
+            { backgroundColor: bgcolor },
+          ]}
+          keyboardShouldPersistTaps="handled"
         >
-          {userMsg.message}
-        </Text>
-      )}
-      <Text style={styles.title}>Welcome back</Text>
-      <TextInput
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        placeholder="Password"
-        secureTextEntry
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title="Login" onPress={handleLogin} disabled={submitLoading} />
-      <Text style={styles.link} onPress={() => router.push("/(auth)/signup")}>
-        Don&apos;t have an account? Sign up
-      </Text>
-      <Text
-        style={styles.link}
-        onPress={() => router.push("/(auth)/forgot-password")}
-      >
-        Forgot password?
-      </Text>
-    </View>
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.logo}
+          />
+          {userMsg.type !== "" && (
+            <Text
+              className={`${
+                userMsg.type === "success" ? "text-[green]" : "text-[red]"
+              }`}
+            >
+              {userMsg.message}
+            </Text>
+          )}
+          <Text style={[styles.title, { color: textcolor }]}>Welcome back</Text>
+          <TextInput
+            label="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            mode="outlined"
+            value={email}
+            onChangeText={setEmail}
+            right={<TextInput.Icon icon="email" />}
+            activeOutlineColor="gray"
+          />
+          <TextInput
+            label="Password"
+            secureTextEntry = {hidePassword}
+            mode="outlined"
+            value={password}
+            onChangeText={setPassword}
+            right={ hidePassword ? <TextInput.Icon icon="eye-off" onPress={() => setHidePassword(false)} /> : <TextInput.Icon onPress={() => setHidePassword(true)}  icon="eye" />}
+            activeOutlineColor="gray"
+          />
+          <Button
+            mode="contained"
+            onPress={handleLogin}
+            disabled={submitLoading}
+            loading={submitLoading}
+            className="mt-4"
+            style={styles.btn}
+            labelStyle={{ color: "white" }}
+          >
+            {submitLoading ? "Loading..." : "Login"}
+          </Button>
+          <Text
+            style={[styles.link, { color: textcolor }]}
+            onPress={() => router.push("/(auth)/signup")}
+          >
+            Don&apos;t have an account? Sign up
+          </Text>
+          <Text
+            style={[styles.link, { color: textcolor }]}
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            Forgot password?
+          </Text>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { padding: 24, flex: 1, justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 16, textAlign: "center" },
+  link: { marginTop: 16,  textAlign: "center" },
+  logo: {
+        width: 100,
+    height: 100,
+    alignSelf: "center",
+    marginBottom: 30,
+    marginTop: 30,
   },
-  link: { marginTop: 16, color: "blue", textAlign: "center" },
+  btn:{
+   backgroundColor: "rgba(43,137,142, 1)"
+  }
 });
