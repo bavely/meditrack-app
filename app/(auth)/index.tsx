@@ -41,8 +41,8 @@ export default function Index() {
             Already have an account? Log in
           </Text>
           <Button
-            style={[styles.button, { backgroundColor: btnbgcolor }]}
-            labelStyle={{ color: logintextcolor }}
+            style={styles.button}
+            labelStyle={{ color: "rgba(43,137,142, 1)" }}
             mode="contained"
             onPress={() => router.push("/(auth)/signup")}
           >
@@ -91,6 +91,8 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 16,
+    backgroundColor: "#ECEDEE",
+
   },
   logintext: {
     alignSelf: "center",

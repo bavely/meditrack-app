@@ -140,7 +140,7 @@ export default function LoginScreen() {
             loading={submitLoading}
             className="mt-4"
             style={styles.btn}
-            labelStyle={{ color: "white" }}
+            labelStyle={{ color: "rgba(43,137,142, 1)" }}
           >
             {submitLoading ? "Loading..." : "Login"}
           </Button>
@@ -174,6 +174,6 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   btn:{
-   backgroundColor: "rgba(43,137,142, 1)"
+   backgroundColor: "#ECEDEE"
   }
 });
