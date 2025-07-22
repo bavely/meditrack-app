@@ -1,11 +1,13 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ApolloError } from "@apollo/client";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -16,12 +18,17 @@ import {
   View,
 } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
-import { DatePickerInput, en, registerTranslation } from 'react-native-paper-dates';
+import {
+  DatePickerInput,
+  en,
+  registerTranslation,
+} from "react-native-paper-dates";
 import { Dropdown } from "react-native-paper-dropdown";
 import { createUser } from "../../services/userService";
 import { useAuthStore } from "../../store/auth-store";
 export default function SignupScreen() {
-  registerTranslation('en', en);
+  registerTranslation("en", en);
+  const height = useHeaderHeight();
   const colorScheme = useColorScheme();
   const router = useRouter();
   const { signup } = useAuthStore();
@@ -33,6 +40,8 @@ export default function SignupScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [hidePassword, setHidePassword] = useState(true);
+  const [hideConfirmPassword, setHideConfirmPassword] = useState(true);
   const [userMsg, setUserMsg] = useState({ type: "", message: "" });
   const [gender, setGender] = useState("");
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -46,7 +55,7 @@ export default function SignupScreen() {
   const textcolor =
     colorScheme === "light" ? Colors.light.text : Colors.dark.text;
 
-      useEffect(() => {
+  useEffect(() => {
     Animated.timing(progressAnim, {
       toValue: (currentStep + 1) / 4,
       duration: 300,
@@ -67,14 +76,14 @@ export default function SignupScreen() {
       return;
     }
     if (currentStep === 2) {
-      if (!password || !confirmPassword) {
+      if (!password.trim() || !confirmPassword.trim()) {
         setUserMsg({
           type: "error",
           message: "Both password fields are required.",
         });
         return;
       }
-      if (password !== confirmPassword) {
+      if (password.trim() !== confirmPassword.trim()) {
         setUserMsg({ type: "error", message: "Passwords do not match." });
         return;
       }
@@ -93,7 +102,9 @@ export default function SignupScreen() {
         name,
         phoneNumber,
         role: "user",
-        aud: "authenticated",
+        aud: "mobile",
+        gender,
+        dob,
       });
       const { accessToken, refreshToken } = response.data.registerUser.data;
 
@@ -148,7 +159,11 @@ export default function SignupScreen() {
               label="Name"
               value={name}
               onChangeText={setName}
-              outlineStyle ={{borderColor: 'gray', borderWidth: 2, padding: 20}}
+              outlineStyle={{
+                borderColor: "gray",
+                borderWidth: 2,
+                padding: 20,
+              }}
             />
             <TextInput
               mode="outlined"
@@ -161,7 +176,7 @@ export default function SignupScreen() {
             />
             <Button
               style={styles.btn}
-              labelStyle={{ color: "rgba(43,137,142, 1)" }}
+              labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
               mode="contained"
               onPress={handleNext}
             >
@@ -172,19 +187,18 @@ export default function SignupScreen() {
         );
       case 1:
         return (
-          < View className="gap-2">
-          
-                    <DatePickerInput
-          locale="en"
-          label="Date of Birth"
-          value={dob}
-          onChange={(d) => setDob(d)}
-          inputMode="start"
-          style={{width: 200}}
-          mode="outlined"
-          keyboardType="numeric"
-          activeOutlineColor="gray"
-        />
+          <View className="gap-2">
+            <DatePickerInput
+              locale="en"
+              label="Date of Birth"
+              value={dob}
+              onChange={(d) => setDob(d)}
+              inputMode="start"
+              style={{ width: 200 }}
+              mode="outlined"
+              keyboardType="numeric"
+              activeOutlineColor="gray"
+            />
             <TextInput
               mode="outlined"
               activeOutlineColor="gray"
@@ -204,7 +218,7 @@ export default function SignupScreen() {
 
             <Button
               style={styles.btn}
-              labelStyle={{ color: "rgba(43,137,142, 1)" }}
+              labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
               mode="contained"
               onPress={handleNext}
             >
@@ -220,21 +234,48 @@ export default function SignupScreen() {
               mode="outlined"
               activeOutlineColor="gray"
               label="Password"
-              secureTextEntry
+              secureTextEntry={hidePassword}
               value={password}
               onChangeText={setPassword}
+              right={
+                hidePassword ? (
+                  <TextInput.Icon
+                    icon="eye"
+                    onPress={() => setHidePassword(!hidePassword)}
+                  />
+                ) : (
+                  <TextInput.Icon
+                    icon="eye-off"
+                    onPress={() => setHidePassword(!hidePassword)}
+                  />
+                )
+              }
             />
             <TextInput
-              mode="outlined"
+              // mode="outlined"
               activeOutlineColor="gray"
               label="Confirm Password"
-              secureTextEntry
+              secureTextEntry={hideConfirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              right={
+                hideConfirmPassword ? (
+                  <TextInput.Icon
+                    icon="eye"
+                    onPress={() => setHideConfirmPassword(!hideConfirmPassword)}
+                  />
+                ) : (
+                  <TextInput.Icon
+                    icon="eye-off"
+                    onPress={() => setHideConfirmPassword(!hideConfirmPassword)}
+                  />
+                )
+              }
             />
+
             <Button
               style={styles.btn}
-              labelStyle={{ color: "rgba(43,137,142, 1)" }}
+              labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
               mode="contained"
               onPress={handleNext}
             >
@@ -246,10 +287,12 @@ export default function SignupScreen() {
       case 3:
         return (
           <>
-            <Text style={[styles.confirm, { color: textcolor }]}>Ready to create your account?</Text>
+            <Text style={[styles.confirm, { color: textcolor }]}>
+              Ready to create your account?
+            </Text>
             <Button
               style={styles.btn}
-              labelStyle={{ color: "rgba(43,137,142, 1)" }}
+              labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
               mode="contained"
               onPress={handleSignup}
               disabled={submitLoading}
@@ -269,71 +312,77 @@ export default function SignupScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? -50 : -100}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.container,
-            { backgroundColor: bgcolor },
-          ]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            {currentStep > 0 && currentStep < 4 && (
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => setCurrentStep((prev) => prev - 1)}
-            >
-              <ArrowLeft size={24} color="#fff" />
-            </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBackground}>
-              <Animated.View 
-                style={[
-                  styles.progressBar,
-                  {
-                    width: progressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0%', '100%'],
-                    })
-                  }
-                ]}
-              />
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.container,
+              { backgroundColor: bgcolor, flexGrow: 1 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+            />
+            {/* Header */}
+            <View style={styles.header}>
+              {currentStep > 0 && currentStep < 4 && (
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => setCurrentStep((prev) => prev - 1)}
+                >
+                  <ArrowLeft size={24} color="#fff" />
+                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.progressText}>
-              Step {currentStep + 1} of 4
-            </Text>
-          </View>
-          {/* <Text style={styles.title}>
+
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBackground}>
+                <Animated.View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0%", "100%"],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                Step {currentStep + 1} of 4
+              </Text>
+            </View>
+            {/* <Text style={styles.title}>
             Sign Up — Step {currentStep + 1} of 4
           </Text> */}
-          {userMsg.type !== "" && (
+            {userMsg.type !== "" && (
+              <Text
+                className={`${
+                  userMsg.type === "success"
+                    ? "text-[green]"
+                    : userMsg.type === "error"
+                      ? "text-[red]"
+                      : "text-[orange]"
+                }`}
+              >
+                {userMsg.message}
+              </Text>
+            )}
+            {renderStep()}
             <Text
-              className={`${
-                userMsg.type === "success"
-                  ? "text-[green]"
-                  : userMsg.type === "error"
-                    ? "text-[red]"
-                    : "text-[orange]"
-              }`}
+              style={[styles.link, { color: textcolor }]}
+              onPress={() => router.push("/(auth)/login")}
             >
-              {userMsg.message}
+              Already have an account? Log in
             </Text>
-          )}
-          {renderStep()}
-          <Text
-            style={[styles.link, {color:textcolor}]}
-            onPress={() => router.push("/(auth)/login")}
-          >
-            Already have an account? Log in
-          </Text>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
@@ -370,82 +419,89 @@ const styles = StyleSheet.create({
   btn: {
     backgroundColor: "#ECEDEE",
   },
-  
+
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 16,
   },
   logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   logoBackground: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   appName: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   progressContainer: {
     marginBottom: 32,
   },
   progressBackground: {
     height: 4,
-    backgroundColor: 'rgb(67, 170, 176)',
+    backgroundColor: "rgb(67, 170, 176)",
     borderRadius: 2,
     marginBottom: 8,
-    borderColor: '#E3F2FD',
+    borderColor: "#E3F2FD",
   },
   progressBar: {
-    height: '100%',
-    backgroundColor: '#fff',
+    height: "100%",
+    backgroundColor: "#fff",
     borderRadius: 2,
   },
   progressText: {
     fontSize: 14,
-    color: '#E3F2FD',
-    textAlign: 'center',
+    color: "#E3F2FD",
+    textAlign: "center",
   },
   stepHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   stepIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 16,
   },
   stepTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   stepSubtitle: {
     fontSize: 16,
-    color: '#E3F2FD',
-    textAlign: 'center',
+    color: "#E3F2FD",
+    textAlign: "center",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: "center",
+    marginBottom: 30,
+    marginTop: 30,
   },
 });

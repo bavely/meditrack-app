@@ -89,8 +89,8 @@ export default function LoginScreen() {
   return (
    <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+      behavior={Platform.OS === "ios" ? "padding" :  "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? -50 : -100}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
@@ -140,7 +140,7 @@ export default function LoginScreen() {
             loading={submitLoading}
             className="mt-4"
             style={styles.btn}
-            labelStyle={{ color: "rgba(43,137,142, 1)" }}
+            labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
           >
             {submitLoading ? "Loading..." : "Login"}
           </Button>

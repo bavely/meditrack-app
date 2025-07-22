@@ -8,7 +8,7 @@ import { Image, ImageBackground, StyleSheet, View } from "react-native";
 import { Button, Text } from "react-native-paper";
 export default function Index() {
   const colorScheme = useColorScheme();
-  const btnbgcolor =
+  const bgcolor =
     colorScheme === "light" ? Colors.light.background : Colors.dark.background;
   const logintextcolor =
     colorScheme === "light" ? Colors.light.text : Colors.dark.text;
@@ -20,7 +20,7 @@ export default function Index() {
       >
         {/* absolutely-positioned gradient overlay */}
         <LinearGradient
-          colors={["rgba(43,137,142, 1)", "transparent"]}
+          colors={[bgcolor, "transparent"]}
           start={{ x: 0, y: 1 }}
           end={{ x: 0, y: 0 }}
           style={styles.gradient}
@@ -42,7 +42,7 @@ export default function Index() {
           </Text>
           <Button
             style={styles.button}
-            labelStyle={{ color: "rgba(43,137,142, 1)" }}
+            labelStyle={{ color: "rgba(8, 145, 178, 1)" }}
             mode="contained"
             onPress={() => router.push("/(auth)/signup")}
           >

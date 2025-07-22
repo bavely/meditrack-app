@@ -51,16 +51,28 @@ export const GET_VIEWER = gql`
      message
    }
    data {
-     id
-    aud
-    role
-    email
-    name
-    phoneNumber
-    emailVerified
-    phoneVerified
-    createdAt
-    updatedAt
+   id
+  aud
+  role
+  email
+  name
+  gender
+  dob
+  phoneNumber
+  prefersPush
+  prefersSms
+  timezone
+  lastSignInAt
+  emailVerified
+  phoneVerified
+  emailConfirmedAt
+  confirmationSentAt
+  phoneConfirmedAt
+  phoneConfirmationSentAt
+  appMetadata
+  createdAt
+  updatedAt
+ 
    }
     }
   }

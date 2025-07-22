@@ -1,16 +1,33 @@
-import Button from "@/components/ui/Button";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { ApolloError } from "@apollo/client";
 import { Link } from "expo-router";
 import React from "react";
-import { Text, TextInput, View } from "react-native";
+import {
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback
+} from "react-native";
+import { Button, TextInput } from 'react-native-paper';
 import { resetPassword } from "../../services/userService";
+
 const ForgotPassword = () => {
+  const colorScheme = useColorScheme();
+  const bgcolor =
+    colorScheme === "light" ? Colors.light.background : Colors.dark.background;
+  const textcolor =
+    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
+
   const [email, setEmail] = React.useState("");
-  const [userMsg, setUserMsg] = React.useState({
-    type: "",
-    message: "",
-  });
+  const [userMsg, setUserMsg] = React.useState({ type: "", message: "" });
+  const [submitLoading, setSubmitLoading] = React.useState(false);
   const handleResetPassword = async () => {
+    setSubmitLoading(true);
     if (!email.trim()) {
       setUserMsg({
         type: "error",
@@ -18,52 +35,116 @@ const ForgotPassword = () => {
       });
       return;
     }
-    console.log("Resetting password for:", email);
-    resetPassword(email)
-      .then((res) => {
-        let respcontent = res.data.forgotPassword;
-        setUserMsg({
-          type: "success",
-          message: respcontent.data.message,
-        });
-      })
-      .catch((err) => {
-        if (err instanceof ApolloError) {
-          if (err.graphQLErrors && err.graphQLErrors.length > 0) {
-            setUserMsg({
-              type: "error",
-              message: err.graphQLErrors[0].message,
-            });
-          }
-        }
-      });
-  };
-  console.log(userMsg);
-  return (
-    <View className="flex-1 flex  justify-center px-[24]">
-      {userMsg.type && (
-        <Text
-          className={`${userMsg.type === "success" ? "text-[green]" : "text-[red]"}`}
-        >
-          {userMsg.message}
-        </Text>
-      )}
-      <Text>Enter your email:</Text>
-      <TextInput
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-        className="border border-[#ccc] rounded-md p-3 my-2"
-      />
 
-      <Button title="Reset Password" onPress={handleResetPassword} />
-      <Link className="text-blue-500 text-center my-4" href="/(auth)/login">
-        Login
-      </Link>
-    </View>
+    try {
+      const res = await resetPassword(email);
+      let respcontent = res.data.forgotPassword;
+      setUserMsg({
+        type: "success",
+        message: respcontent.data.message,
+      });
+      setSubmitLoading(false);
+    } catch (err) {
+      if (err instanceof ApolloError && err.graphQLErrors.length > 0) {
+        setUserMsg({
+          type: "error",
+          message: err.graphQLErrors[0].message,
+        });
+      }
+      setSubmitLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? -50 : -100}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={[styles.container, { backgroundColor: bgcolor }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.logo}
+          />
+          {userMsg.type !== "" && (
+            <Text
+              style={{
+                color: userMsg.type === "success" ? "green" : "red",
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
+              {userMsg.message}
+            </Text>
+          )}
+          <Text style={[styles.title, { color: textcolor }]}>Enter your email:</Text>
+          <TextInput
+            label="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            mode="outlined"
+            value={email}
+            onChangeText={setEmail}
+            right={<TextInput.Icon icon="email" />}
+            activeOutlineColor="gray"
+          />
+          <Button           disabled={submitLoading}
+            loading={submitLoading}
+            className="mt-4"
+            style={styles.btn}
+            labelStyle={{ color: "rgba(8, 145, 178, 1)" }} onPress={handleResetPassword}   mode="contained" > 
+            Reset Password
+          </Button>
+          <Link href="/(auth)/login" className="mt-4">
+            <Text style={[styles.link, { color: textcolor }]}>Login</Text>
+          </Link>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
 export default ForgotPassword;
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 24,
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 18,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    color: "#000",
+  },
+  link: {
+    marginTop: 16,
+    textAlign: "center",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: "center",
+    marginBottom: 30,
+    marginTop: 30,
+  },
+    btn:{
+   backgroundColor: "#ECEDEE"
+  }
+});
+function useState(arg0: boolean): [any, any] {
+  throw new Error("Function not implemented.");
+}
+

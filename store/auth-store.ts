@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
         await AsyncStorage.setItem('refreshToken', refreshToken);
 
         const userresonse = await getViewerProfile();
-
+        console.log('User response:',JSON.stringify(userresonse));
         const user = userresonse.data.getUser.data;
 
         if (!user) {
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
             'Please verify your email before signing in. Check your inbox for a verification link.'
           );
         }
-
+        console.log('User response:', JSON.stringify(user));
         set({
           accessToken,
           refreshToken,
