@@ -2,16 +2,20 @@ import { Medication } from "@/types/medication";
 import { useRouter } from "expo-router";
 import { Bell, Pill, Plus } from "lucide-react-native";
 import { useEffect } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { Avatar } from 'react-native-paper';
 import DoseCard from "../../components/DoseCard";
 import EmptyState from "../../components/EmptyState";
 import MedicationCard from "../../components/MedicationCard";
 import ProgressCircle from "../../components/ProgressCircle";
 import SectionHeader from "../../components/SectionHeader";
 import { Colors } from "../../constants/Colors";
+import { useAuthStore } from "../../store/auth-store";
 import { useMedicationStore } from "../../store/medication-store";
 export default function DashboardScreen() {
+ const colorScheme = useColorScheme();
   const router = useRouter();
+  const { user } = useAuthStore();
   const {
     medications,
     upcomingDoses,
@@ -23,7 +27,10 @@ export default function DashboardScreen() {
     refreshUpcomingDoses,
     calculateAdherenceRate,
   } = useMedicationStore();
-  
+     const textcolor =
+    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
+    const localbagroundcolor =
+    colorScheme === "light" ? "#f1f5f9" : "#020617";
   useEffect(() => {
     refreshUpcomingDoses();
     calculateAdherenceRate();
@@ -43,9 +50,30 @@ const handleMedicationPress = (medication: Medication) => {
   const pendingDoses = upcomingDoses.filter(
     (dose) => !dose.status || dose.status === "pending"
   );
+
+    const getUserInitials = () => {
+    if (!user || !user.name) return "?";
+    
+    const nameParts = user.name.split(" ");
+    if (nameParts.length >= 2) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+    }
+    
+    return nameParts[0][0].toUpperCase();
+  };
   
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <>
+    <ScrollView style={[styles.container, { backgroundColor: localbagroundcolor }]} contentContainerStyle={styles.content}>
+      <View style={styles.statsContainer} >
+        <Avatar.Text
+          size={24}
+          label={getUserInitials()}
+          style={[styles.statLabel, {marginRight: 10}]}
+          labelStyle={{ color: textcolor }}
+        />
+        <Text style={[styles.statLabel, {color:textcolor }]}> Welcome {user?.name}</Text>
+  </View>
       {/* Header with adherence stats */}
       <View style={styles.statsContainer}>
         <ProgressCircle
@@ -57,15 +85,15 @@ const handleMedicationPress = (medication: Medication) => {
         
         <View style={styles.statsDetails}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{todaysTakenCount}</Text>
-            <Text style={styles.statLabel}>Taken</Text>
+            <Text style={[styles.statValue, { color: textcolor }]}>{todaysTakenCount}</Text>
+            <Text style={[styles.statLabel, {color:textcolor }]}>Taken</Text>
           </View>
           
           <View style={styles.statDivider} />
           
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{todaysTotalCount}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={[styles.statValue, { color: textcolor }]}>{todaysTotalCount}</Text>
+            <Text style={[styles.statLabel, {color:textcolor }]}>Total</Text>
           </View>
         </View>
       </View>
@@ -117,7 +145,9 @@ const handleMedicationPress = (medication: Medication) => {
         />
       )}
       
-      {/* Add medication button */}
+
+    </ScrollView>
+          {/* Add medication button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={handleAddMedication}
@@ -125,14 +155,13 @@ const handleMedicationPress = (medication: Medication) => {
       >
         <Plus size={24} color="#FFFFFF" />
       </TouchableOpacity>
-    </ScrollView>
+      </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   content: {
     padding: 16,
@@ -140,15 +169,14 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: Colors.light.background,
+    backgroundColor: "rgba(224, 242, 254, .5)",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
     alignItems: "center",
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 8,
     elevation: 2,
   },
   statsDetails: {
@@ -165,11 +193,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.light.text,
+ 
   },
   statLabel: {
     fontSize: 14,
-    color: Colors.light.text,
+
     marginTop: 4,
   },
   statDivider: {
@@ -192,5 +220,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+    zIndex: 1000,
   },
 });

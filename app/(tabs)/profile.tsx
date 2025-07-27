@@ -34,9 +34,9 @@ export default function ProfileScreen() {
   
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user || !user.email) return "?";
+    if (!user || !user.name) return "?";
     
-    const nameParts = user.email.split(" ");
+    const nameParts = user.name.split(" ");
     if (nameParts.length >= 2) {
       return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
     }

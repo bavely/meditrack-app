@@ -1,10 +1,16 @@
 import { Colors } from "@/constants/Colors";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from "expo-router";
 import { Camera, X } from "lucide-react-native";
 import { useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // Import Dimensions
+import mime from 'react-native-mime-types';
+import MlkitOcr from 'react-native-mlkit-ocr';
 import Button from "../../components/ui/Button";
+
+// Get screen dimensions for responsive styling
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function ScanMedicationScreen() {
   const router = useRouter();
@@ -14,39 +20,64 @@ export default function ScanMedicationScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   
   const cameraRef = useRef(null);
+
+  const prepareFile = (uri: string) => {
+    const fileName = uri.split('/').pop() || 'photo.jpg';
+    console.log(mime.lookup(fileName), "mime")
+    const fileType = mime.lookup(fileName) || 'image/jpeg';
+
+    
+  
+    return {
+      uri,
+      name: fileName,
+      type: fileType,
+    };
+  };
   
   const handleTakePicture = async () => {
     if (isTakingPicture || isProcessing) return;
-    
+  
     setIsTakingPicture(true);
-    
+  
     try {
-      // In a real app, this would capture a photo and process it
-      // For now, we'll just simulate the process
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      setIsTakingPicture(false);
-      setIsProcessing(true);
-      
-      // Simulate processing the image
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      
-      // Navigate to add medication screen with pre-filled data
-      router.replace({
-        pathname: "/medication/add",
-        params: {
-          name: "Lisinopril",
-          dosage: "10mg",
-          frequency: "Once daily",
-          instructions: "Take with or without food",
-        },
+      // @ts-expect-error
+      const photo = await cameraRef.current?.takePictureAsync({
+        quality: 1,
+        skipProcessing: true,
+        base64: false,
       });
+  
+      if (photo?.uri) {
+        setIsProcessing(true);
+  
+        const recognized = await MlkitOcr.detectFromFile(photo.uri);
+        const labelText = recognized.map((block) => block.text).join('\n');
+        console.log("🧠 OCR Result:", labelText);
+  
+        // Save image locally for debugging if needed
+        const destPath = FileSystem.documentDirectory + 'captured-label.jpg';
+        await FileSystem.copyAsync({ from: photo.uri, to: destPath });
+  
+        // Navigate with parsed text preview
+        router.replace({
+          pathname: "/medication/add",
+          params: {
+            name: "Parsed from MLKit",
+            dosage: "",
+            frequency: "",
+            instructions: labelText.slice(0, 200),
+          },
+        });
+      }
     } catch (error) {
-      //consoleerror("Error taking picture:", error);
+      console.error("Error during MLKit OCR scan:", error);
+    } finally {
       setIsTakingPicture(false);
       setIsProcessing(false);
     }
   };
+  
   
   const toggleCameraFacing = () => {
     setFacing((current : CameraType) => (current === "back" ? "front" : "back"));
@@ -157,10 +188,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scanFrame: {
-    width: 280,
-    height: 180,
+    width: screenWidth * 0.9, // 90% of screen width
+    aspectRatio: 1.5, // Maintain a rectangular aspect ratio suitable for labels (e.g., 3:2)
     borderRadius: 12,
     position: "relative",
+    borderColor: "#FFFFFF", // Added for visibility
+    borderWidth: 2, // Added for visibility
   },
   cornerTopLeft: {
     position: "absolute",
@@ -212,7 +245,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     marginTop: 24,
-    paddingHorizontal: 40,
+    paddingHorizontal: screenWidth * 0.1, // Adjust padding based on screen width
   },
   closeButton: {
     position: "absolute",

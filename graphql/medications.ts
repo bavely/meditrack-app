@@ -30,3 +30,23 @@ export const GET_DASHBOARD = gql`
     }
   }
 `;
+
+export const PARSE_MED_LABEL = gql`
+  mutation ParseMedicationLabelMultiple($input: [Upload!]!) {
+    parseMedicationLabelMultiple(input: $input) {
+      success
+   errors {
+     field
+     message
+   }
+   data {
+    name
+    dosage
+    quantity
+    instructions
+    therapy
+   }
+    }
+  }
+`;
+

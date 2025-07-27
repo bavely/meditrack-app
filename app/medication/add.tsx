@@ -1,15 +1,14 @@
-import { frequencyOptions, medicationTypes } from "@/constants/medications";
+import { medicationTypes } from "@/constants/medications";
 import { useMedicationStore } from "@/store/medication-store";
 import { useRouter } from "expo-router";
 import { Camera, ChevronDown, ChevronRight, Pill } from "lucide-react-native";
 import { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import Button from "../../components/ui/Button";
 import { Colors } from "../../constants/Colors";
@@ -54,6 +53,10 @@ export default function AddMedicationScreen() {
   
   const handleScanPress = () => {
     router.push("/medication/scan");
+  };
+  
+  const handleAddManuallyPress = () => {
+    router.push("/medication/manually");
   };
   
   return (
@@ -116,107 +119,16 @@ export default function AddMedicationScreen() {
         <ChevronRight size={20} color={Colors.light.tint} />
       </TouchableOpacity>
       
-      {/* Medication name */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Medication Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter medication name"
-          value={name}
-          onChangeText={setName}
-        />
-      </View>
-      
-      {/* Dosage */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Dosage</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 10mg, 500mg, etc."
-          value={dosage}
-          onChangeText={setDosage}
-        />
-      </View>
-      
-      {/* Frequency */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Frequency</Text>
-        
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowFrequencySelector(!showFrequencySelector)}
-        >
-          <Text style={frequency ? styles.inputText : styles.inputPlaceholder}>
-            {frequency || "Select frequency"}
-          </Text>
-          <ChevronDown size={20} color={Colors.light.text} />
-        </TouchableOpacity>
-        
-        {showFrequencySelector && (
-          <View style={styles.frequencyOptions}>
-            {frequencyOptions.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={styles.frequencyOption}
-                onPress={() => {
-                  setFrequency(option.name);
-                  setShowFrequencySelector(false);
-                }}
-              >
-                <Text style={styles.frequencyOptionText}>{option.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
-      
-      {/* Time */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Time</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="09:00"
-          value={time}
-          onChangeText={setTime}
-        />
-        <Text style={styles.helperText}>
-          Enter time in 24-hour format (HH:MM)
-        </Text>
-      </View>
-      
-      {/* Quantity */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Quantity</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Number of pills/doses"
-          value={quantity}
-          onChangeText={setQuantity}
-          keyboardType="numeric"
-        />
-      </View>
-      
-      {/* Instructions */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Instructions (Optional)</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Special instructions for taking this medication"
-          value={instructions}
-          onChangeText={setInstructions}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-      </View>
+      {/* Add Manually button */}
+      <TouchableOpacity
+        style={styles.addManuallyButton}
+        onPress={handleAddManuallyPress}
+      >
+        <Text style={styles.addManuallyButtonText}>Add Manually</Text>
+      </TouchableOpacity>
       
       {/* Save button */}
-      <Button
-        title="Save Medication"
-        onPress={handleSave}
-        style={styles.saveButton}
-        disabled={!name || !dosage || !frequency}
-      />
+      <Button onPress={handleSave} title="Confirm" />
     </ScrollView>
   );
 }
@@ -354,5 +266,13 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 16,
+  },
+  addManuallyButton: {
+    marginTop: 16,
+  },
+  addManuallyButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: Colors.light.tint,
   },
 });

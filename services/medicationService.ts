@@ -1,4 +1,4 @@
-import { ADD_MEDICATION, GET_DASHBOARD } from '../graphql/medications';
+import { ADD_MEDICATION, GET_DASHBOARD, PARSE_MED_LABEL } from '../graphql/medications';
 import { apolloClient as client } from '../utils/apollo';
 
 export const addMedication = async (input: any) => {
@@ -16,3 +16,11 @@ export const getDashboardData = async () => {
   });
   return data.dashboard;
 };
+
+
+export const parsingLabel = async (inputop: any  ) =>{
+  return await client.mutate({
+    mutation: PARSE_MED_LABEL,
+    variables: inputop
+  })
+}

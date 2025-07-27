@@ -11,7 +11,7 @@ interface MedicationState {
   todaysTakenCount: number;
   todaysTotalCount: number;
   adherenceRate: number;
-  
+  draft: any;
   // Actions
   addMedication: (medication: Medication) => void;
   updateMedication: (id: string, medication: Partial<Medication>) => void;
@@ -20,6 +20,7 @@ interface MedicationState {
   markDoseAsSkipped: (doseId: string) => void;
   calculateAdherenceRate: () => void;
   refreshUpcomingDoses: () => void;
+  setDraft: (draft: any) => void;
 }
 
 export const useMedicationStore = create<MedicationState>()(
@@ -31,6 +32,9 @@ export const useMedicationStore = create<MedicationState>()(
       todaysTakenCount: 0,
       todaysTotalCount: 0,
       adherenceRate: 0,
+      draft: {},
+
+      setDraft: (draft) => set({ draft }),
 
       addMedication: (medication) => {
         set((state) => ({

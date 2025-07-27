@@ -1,20 +1,30 @@
 // app/(tabs)/_layout.tsx
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Tabs, useRouter } from "expo-router";
-import { Calendar, Home, MessageSquare, PlusCircle, User } from "lucide-react-native";
+import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 
 export default function TabLayout() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const bgcolor =
+    colorScheme === "light" ? Colors.light.background : Colors.dark.background;
+  const textcolor =
+    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
+
+    const tintcolor =
+    colorScheme === "light" ? Colors.light.tint : Colors.dark.tint;
   
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        tabBarInactiveTintColor: Colors.light.text,
+        tabBarActiveTintColor: tintcolor,
+        tabBarInactiveTintColor: textcolor,
         tabBarStyle: {
-          backgroundColor: Colors.light.background,
+          backgroundColor: bgcolor,
           borderTopWidth: 1,
-          borderTopColor: Colors.light.tint,
+          borderTopColor: tintcolor,
           elevation: 0,
           height: 60,
           paddingBottom: 8,
@@ -24,13 +34,17 @@ export default function TabLayout() {
           fontWeight: "500",
         },
         headerStyle: {
-          backgroundColor: Colors.light.background,
+          backgroundColor: bgcolor,
+          
         },
-        headerShadowVisible: false,
+        headerShadowVisible: true,
         headerTitleStyle: {
           fontWeight: "700",
           fontSize: 24,
         },
+        headerTitleAlign: "center",
+        headerTintColor: textcolor,
+     
       }}
     >
       <Tabs.Screen
@@ -46,15 +60,15 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: "Calendar",
-          tabBarIcon: ({ color }) => <Calendar size={24} color={Colors.light.icon} />,
+          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />,
         }}
       />
       
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="add"
         options={{
           title: "Add",
-          tabBarIcon: ({ color }) => <PlusCircle size={32} color={Colors.light.icon} />,
+          tabBarIcon: ({ color }) => <PlusCircle size={32} color={bgcolor} />,
           tabBarLabel: () => null,
           headerShown: false,
         }}
@@ -66,7 +80,7 @@ export default function TabLayout() {
             router.push("/medication/add");
           },
         })}
-      />
+      /> */}
       
       <Tabs.Screen
         name="assistant"
