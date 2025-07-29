@@ -32,21 +32,21 @@ export const GET_DASHBOARD = gql`
 `;
 
 export const PARSE_MED_LABEL = gql`
-  mutation ParseMedicationLabelMultiple($input: [Upload!]!) {
-    parseMedicationLabelMultiple(input: $input) {
-      success
-   errors {
-     field
-     message
-   }
-   data {
-    name
-    dosage
-    quantity
-    instructions
-    therapy
-   }
+mutation ParseMedicationLabel($label: String!) {
+  parseMedicationLabel(label: $label) {
+    success
+    errors {
+      field
+      message
+    }
+    data {
+      name
+      dosage
+      quantity
+      instructions
+      therapy
     }
   }
+}
 `;
 

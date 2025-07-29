@@ -18,9 +18,18 @@ export const getDashboardData = async () => {
 };
 
 
-export const parsingLabel = async (inputop: any  ) =>{
+// export const parsingLabel = async (inputop: any  ) =>{
+//   return await client.mutate({
+//     mutation: PARSE_MED_LABEL,
+//     variables: inputop
+//   })
+// }
+
+export const handleParsedText = async (scannedText: string) => {
+  console.log("🧠 Parsed Text Service: ===============================================================================>", scannedText);
   return await client.mutate({
     mutation: PARSE_MED_LABEL,
-    variables: inputop
-  })
+    variables: { label: scannedText }
+  });
 }
+  
