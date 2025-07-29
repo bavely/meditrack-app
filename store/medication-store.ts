@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { medicationHistory, medications, upcomingDoses } from "../constants/medications";
-import { Medication, MedicationDose, MedicationHistory } from "../types/medication";
+import { Medication, MedicationDose, MedicationHistory, ParsedMedication } from "../types/medication";
 
 interface MedicationState {
   medications: Medication[];
@@ -12,6 +12,7 @@ interface MedicationState {
   todaysTotalCount: number;
   adherenceRate: number;
   draft: any;
+  parsedMedication: ParsedMedication | null;
   // Actions
   addMedication: (medication: Medication) => void;
   updateMedication: (id: string, medication: Partial<Medication>) => void;
@@ -21,6 +22,7 @@ interface MedicationState {
   calculateAdherenceRate: () => void;
   refreshUpcomingDoses: () => void;
   setDraft: (draft: any) => void;
+  setParsedMedication: (parsedMedication: ParsedMedication) => void;
 }
 
 export const useMedicationStore = create<MedicationState>()(
@@ -33,6 +35,7 @@ export const useMedicationStore = create<MedicationState>()(
       todaysTotalCount: 0,
       adherenceRate: 0,
       draft: {},
+      parsedMedication: null,
 
       setDraft: (draft) => set({ draft }),
 
@@ -135,6 +138,10 @@ export const useMedicationStore = create<MedicationState>()(
         // medication schedules and current time
         set({ upcomingDoses });
         get().calculateAdherenceRate();
+      },
+
+      setParsedMedication: (parsedMedication) => {
+        set({ parsedMedication });
       },
     }),
     {

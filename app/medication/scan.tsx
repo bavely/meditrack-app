@@ -2,6 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
+import { DeviceMotion } from "expo-sensors";
 import {
   Camera,
   Flashlight,
@@ -24,35 +25,72 @@ import {
 import MlkitOcr from "react-native-mlkit-ocr";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
+import { useMedicationStore } from "../../store/medication-store";
 
 // Get screen dimensions for responsive styling
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 type CaptureMode = "single" | "rotating";
 
+interface MotionData {
+  x: number;
+  y: number;
+  z: number;
+}
+
+interface ExtractedMedication {
+  medicationName: string;
+  dosage: string;
+  instructions: string;
+}
+
 export default function ScanMedicationScreen() {
   const router = useRouter();
+  const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [isTakingPicture, setIsTakingPicture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [captureMode, setCaptureMode] = useState<CaptureMode>("single");
+  const [captureMode, setCaptureMode] = useState<CaptureMode>("rotating");
   const [isRotatingCapture, setIsRotatingCapture] = useState(false);
   const [capturedTexts, setCapturedTexts] = useState<string[]>([]);
   const [rotationProgress, setRotationProgress] = useState(0);
+  
+  // Motion detection states
+  const [motionData, setMotionData] = useState<MotionData>({ x: 0, y: 0, z: 0 });
+  const [isMotionDetected, setIsMotionDetected] = useState(false);
+  const [motionSensitivity, setMotionSensitivity] = useState(0.5); // Adjustable sensitivity
+  const [extractedMedication, setExtractedMedication] = useState<ExtractedMedication | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
 
   const cameraRef = useRef(null);
-  const captureIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
-  );
+  const captureIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  const motionSubscription = useRef<any>(null);
+  const motionHistoryRef = useRef<MotionData[]>([]);
+  const lastCaptureTimeRef = useRef<number>(0);
+   // refs mirror those states for our motion callback
+ const isRotatingCaptureRef = useRef(isRotatingCapture);
+ const isCompleteRef        = useRef(isComplete);
+
+   // whenever the state changes, update the ref
+   useEffect(() => {
+    isRotatingCaptureRef.current = isRotatingCapture;
+  }, [isRotatingCapture]);
+
+  useEffect(() => {
+    isCompleteRef.current = isComplete;
+  }, [isComplete]);
 
   useEffect(() => {
     return () => {
       if (captureIntervalRef.current) {
         clearInterval(captureIntervalRef.current);
+      }
+      if (motionSubscription.current) {
+        motionSubscription.current.remove();
       }
     };
   }, []);
@@ -64,40 +102,157 @@ export default function ScanMedicationScreen() {
     }
   }, [isRotatingCapture]);
 
-  const processOcrText = (ocrText: string) => {
+  // Initialize motion detection
+  useEffect(() => {
+    const setupMotionDetection = async () => {
+      try {
+        // Set motion detection update interval
+        DeviceMotion.setUpdateInterval(100); // 100ms for responsive detection
+        
+        motionSubscription.current = DeviceMotion.addListener(handleMotionData);
+      } catch (error) {
+        console.error("Error setting up motion detection:", error);
+      }
+    };
+
+    setupMotionDetection();
+
+    return () => {
+      if (motionSubscription.current) {
+        motionSubscription.current.remove();
+      }
+    };
+  }, []);
+
+
+   // NEW: Centralized navigation function with error handling
+   const navigateToConfirmation = async (medicationData: any) => {
+    try {
+      console.log("🚀 Navigating to confirmation with data:", JSON.stringify(medicationData));
+      
+      // Ensure we have the parsed medication data in the store
+      if (medicationData) {
+        setParsedMedication(medicationData);
+        console.log("✅ Medication data set in store");
+      }
+
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to confirmation screen
+      router.push("/medication/confirmation");
+      console.log("✅ Navigation initiated");
+      
+    } catch (error) {
+      console.error("❌ Navigation error:", error);
+      // Fallback to add screen if navigation fails
+      router.push("/medication/add");
+    }
+  };
+
+    // NEW: Centralized error handling function  
+    const handleNavigationError = (error: any) => {
+      console.log("🧠 Parsed Text Error:", JSON.stringify(error));
+      
+      // Reset processing state
+      setIsProcessing(false);
+      setIsComplete(false);
+      setExtractedMedication(null);
+      
+      // Navigate to add screen as fallback
+      router.push("/medication/add");
+    };
+
+  const handleMotionData = (data: any) => {
+    const newMotionData: MotionData = {
+      x: data.acceleration?.x || 0,
+      y: data.acceleration?.y || 0,
+      z: data.acceleration?.z || 0,
+    };
+
+    setMotionData(newMotionData);
+
+    // Add to motion history for smoothing
+    motionHistoryRef.current.push(newMotionData);
+    if (motionHistoryRef.current.length > 10) {
+      motionHistoryRef.current.shift();
+    }
+
+    // Calculate motion magnitude
+    const magnitude = Math.sqrt(
+      Math.pow(newMotionData.x, 2) + 
+      Math.pow(newMotionData.y, 2) + 
+      Math.pow(newMotionData.z, 2)
+    );
+
+    // Detect rotation motion (primarily Y-axis for bottle rotation)
+    const isRotating = Math.abs(newMotionData.y) > motionSensitivity || magnitude > motionSensitivity;
+    setIsMotionDetected(isRotating);
+
+    // Auto-capture during rotation mode when motion is detected
+    if (isRotatingCaptureRef.current && isRotating && !isCompleteRef.current) {
+      const currentTime = Date.now();
+      // Throttle captures to every 300ms during motion
+      if (currentTime - lastCaptureTimeRef.current > 300) {
+        lastCaptureTimeRef.current = currentTime;
+        captureFrameDuringMotion();
+      }
+    }
+  };
+
+  const processOcrText = (ocrText: string): ExtractedMedication => {
     const lines = ocrText.split("\n").filter((line) => line.trim());
     let medicationName = "";
     let dosage = "";
     let instructions = "";
 
-    // Try to extract medication name (usually in the first few lines)
-    for (let i = 0; i < Math.min(3, lines.length); i++) {
+    // Enhanced medication name extraction for cylindrical bottles
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i].trim();
-      // Look for medication name patterns (avoiding pharmacy names)
+      // Look for medication name patterns (avoiding pharmacy names and common bottle text)
       if (
         line &&
+        line.length > 2 &&
         !line.toLowerCase().includes("pharmacy") &&
         !line.toLowerCase().includes("care") &&
-        !line.includes("RX") &&
-        !line.match(/^\d+/)
+        !line.toLowerCase().includes("prescription") &&
+        !line.toLowerCase().includes("rx") &&
+        !line.toLowerCase().includes("refill") &&
+        !line.toLowerCase().includes("label") &&
+        !line.match(/^\d+/) &&
+        !line.match(/^[A-Z]{2,3}\s?\d+/) // Avoid prescription numbers
       ) {
-        medicationName = line;
+        // Prefer longer, more descriptive names
+        if (!medicationName || line.length > medicationName.length) {
+          medicationName = line;
+        }
+      }
+    }
+
+    // Enhanced dosage extraction
+    const dosagePatterns = [
+      /(\d+\.?\d*\s*(mg|mcg|µg|g|ml|tablets?|caps?|capsules?|units?|iu|drops?))/gi,
+      /(\d+\.?\d*\s*milligram)/gi,
+      /(\d+\.?\d*\s*microgram)/gi,
+    ];
+
+    for (const pattern of dosagePatterns) {
+      const matches = ocrText.match(pattern);
+      if (matches) {
+        dosage = matches[0];
         break;
       }
     }
 
-    // Look for dosage information
-    const dosagePattern = /(\d+\.?\d*\s*(mg|mcg|g|ml|tablets?|caps?|units?))/i;
-    const dosageMatch = ocrText.match(dosagePattern);
-    if (dosageMatch) {
-      dosage = dosageMatch[1];
-    }
-
-    // Look for frequency/timing instructions
+    // Enhanced frequency/timing instructions extraction
     const frequencyPatterns = [
-      /take\s+\d+.*?(daily|twice|once|every|bedtime|morning)/i,
-      /\d+\s+times?\s+(daily|per day|a day)/i,
-      /every\s+\d+\s+hours?/i,
+      /take\s+\d+.*?(daily|twice|once|every|bedtime|morning|evening|night)/gi,
+      /\d+\s+times?\s+(daily|per day|a day)/gi,
+      /every\s+\d+\s+hours?/gi,
+      /(once|twice|three times?)\s+(daily|a day|per day)/gi,
+      /with\s+(meals?|food)/gi,
+      /before\s+(meals?|bed)/gi,
+      /as\s+needed/gi,
     ];
 
     for (const pattern of frequencyPatterns) {
@@ -111,52 +266,167 @@ export default function ScanMedicationScreen() {
     return { medicationName, dosage, instructions };
   };
 
+  const isExtractionComplete = (extraction: ExtractedMedication): boolean => {
+    return !!(
+      extraction.medicationName && 
+      extraction.medicationName.length > 2 &&
+      extraction.dosage && 
+      extraction.instructions
+    );
+  };
+
+  const captureFrameDuringMotion = async () => {
+    console.log("🔍 Capture Frame During Motion ===============================================>");
+    if (!cameraRef.current || isTakingPicture) return;
+
+    try {
+      setIsTakingPicture(true);
+      
+      // @ts-expect-error
+      const photo = await cameraRef.current?.takePictureAsync({
+        quality: 0.9,
+        skipProcessing: false,
+        base64: false,
+        flash: flashEnabled ? "on" : "off",
+        autoFocus: true,
+      });
+      console.log("🔍 Photo:", photo);
+      if (photo?.uri) {
+        try {
+          const recognized = await MlkitOcr.detectFromFile(photo.uri);
+          const labelText = recognized
+            .map((block) => block.text)
+            .join("\n")
+            .trim();
+          console.log("🔍 Label Text:", labelText);
+          if (labelText && labelText.length > 10) {
+            // Add to captured texts
+            setCapturedTexts((prev) => {
+              const newTexts = [...prev, labelText];
+              return newTexts.slice(-20); // Keep last 20 for efficiency
+            });
+
+            // Extract medication data from current capture
+            const currentExtraction = processOcrText(labelText);
+            
+            // Update best extraction found so far
+            setExtractedMedication(prevExtraction => {
+              if (!prevExtraction) return currentExtraction;
+              
+              // Merge and improve extraction
+              const merged: ExtractedMedication = {
+                medicationName: currentExtraction.medicationName || prevExtraction.medicationName,
+                dosage: currentExtraction.dosage || prevExtraction.dosage,
+                instructions: currentExtraction.instructions || prevExtraction.instructions,
+               
+              };
+
+              // Prefer longer, more complete data
+              if (currentExtraction.medicationName && currentExtraction.medicationName.length > prevExtraction.medicationName.length) {
+                merged.medicationName = currentExtraction.medicationName;
+              }
+              
+              return merged;
+            });
+
+            console.log(`📷 Motion Capture OCR:`, labelText.slice(0, 100));
+            
+            // Check if we have complete information
+            if (isExtractionComplete(currentExtraction)) {
+              console.log("✅ Complete medication info found, stopping capture");
+              stopPanoramaCapture();
+              return;
+            }
+          }
+        } catch (ocrError) {
+          console.log("OCR error during motion capture:", ocrError);
+        }
+      }
+    } catch (error) {
+      console.error("Error during motion-triggered capture:", error);
+    } finally {
+      setIsTakingPicture(false);
+    }
+  };
+
   /**
-   * Merges OCR segments from a rotating panorama by greedy overlap.
+   * Enhanced panorama text processing with better deduplication
    */
   function processPanoramaText(texts: string[]): string {
     if (!texts.length) return "";
 
-    // Start with the first capture
-    let merged = texts[0].trim();
+    // Remove duplicates and very short segments
+    const uniqueTexts = texts
+      .filter(text => text.trim().length > 5)
+      .filter((text, index, arr) => {
+        // Remove very similar texts
+        return !arr.slice(0, index).some(prevText => {
+          const similarity = calculateSimilarity(text, prevText);
+          return similarity > 0.8;
+        });
+      });
 
-    // Helper: find the longest overlap between end of `a` and start of `b`
-    function findOverlap(a: string, b: string): number {
-      const maxLen = Math.min(a.length, b.length);
-      for (let len = maxLen; len > 0; len--) {
-        if (a.endsWith(b.slice(0, len))) {
-          return len;
-        }
+    if (uniqueTexts.length === 0) return "";
+    if (uniqueTexts.length === 1) return uniqueTexts[0];
+
+    // Start with the longest segment as base
+    let merged = uniqueTexts.reduce((longest, current) => 
+      current.length > longest.length ? current : longest
+    );
+
+    // Add unique information from other segments
+    uniqueTexts.forEach(segment => {
+      if (segment !== merged) {
+        const lines = segment.split('\n');
+        lines.forEach(line => {
+          const trimmedLine = line.trim();
+          if (trimmedLine.length > 3 && !merged.toLowerCase().includes(trimmedLine.toLowerCase())) {
+            merged += '\n' + trimmedLine;
+          }
+        });
       }
-      return 0;
-    }
-
-    for (let i = 1; i < texts.length; i++) {
-      const segment = texts[i].trim();
-      if (!segment) continue;
-
-      // Compute overlap
-      const overlapLen = findOverlap(merged, segment);
-      // If overlap is substantial, merge; otherwise insert a line break
-      if (overlapLen > segment.split(/\s+/).slice(0, 3).join(" ").length / 2) {
-        merged = merged + segment.slice(overlapLen);
-      } else {
-        merged = merged + "\n" + segment;
-      }
-    }
-
-    // Post-processing: collapse repeated lines
-    const lines = merged.split("\n");
-    const seen = new Set<string>();
-    const unique = lines.filter((line) => {
-      const key = line.toLowerCase().trim();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
     });
 
-    return unique.join("\n").trim();
+    return merged.trim();
   }
+
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  };
+
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
 
   const handleSingleCapture = async () => {
     if (isTakingPicture || isProcessing) return;
@@ -181,46 +451,35 @@ export default function ScanMedicationScreen() {
             .map((block) => block.text)
             .join("\n")
             .trim();
+          console.log("🔍 Label Text:", labelText);
 
-          const { medicationName, dosage, instructions } =
-            processOcrText(labelText);
 
-          const sanitized = `${medicationName} ${dosage} ${instructions}`;
-
-          handleParsedText(sanitized)
-            .then((res) => {
-              console.log("🧠 Parsed Text:", JSON.stringify(res));
-            })
-            .catch((err) => {
-              console.log("🧠 Parsed Text Error:", JSON.stringify(err));
-            });
+          try {
+            const res = await handleParsedText(labelText);
+            console.log("🧠 Parsed Text:", JSON.stringify(res));
+            
+            // Verify response structure
+            if (res && res.data && res.data.parseMedicationLabel && res.data.parseMedicationLabel.data) {
+              await navigateToConfirmation(res.data.parseMedicationLabel.data);
+            } else {
+              console.warn("⚠️ Unexpected response structure:", res);
+              throw new Error("Invalid response structure");
+            }
+          } catch (parseError) {
+            console.error("🧠 Parse/Navigation Error:", parseError);
+            handleNavigationError(parseError);
+          }
 
           // Save image locally for debugging
           const destPath = FileSystem.documentDirectory + "captured-label.jpg";
           await FileSystem.copyAsync({ from: photo.uri, to: destPath });
 
           // Navigate with parsed data
-          router.replace({
-            pathname: "/medication/add",
-            params: {
-              name: medicationName || "Medication from scan",
-              dosage: dosage,
-              frequency: instructions,
-              instructions: labelText.slice(0, 300),
-              scannedText: labelText,
-            },
-          });
+        
         } catch (ocrError) {
           console.error("OCR processing error:", ocrError);
-          router.replace({
-            pathname: "/medication/add",
-            params: {
-              name: "Scanned medication",
-              dosage: "",
-              frequency: "",
-              instructions: "Please enter medication details manually",
-            },
-          });
+            // TODO: Handle error here
+          router.push("/medication/add")
         }
       }
     } catch (error) {
@@ -239,136 +498,92 @@ export default function ScanMedicationScreen() {
 
     setIsRotatingCapture(false);
     setIsProcessing(true);
+    setIsComplete(true);
     progressAnimation.setValue(0);
 
-    // Enhanced panorama text processing
-    setTimeout(() => {
-      const processedText = processPanoramaText(capturedTexts);
-      console.log("📷 Panorama Combined Result:", processedText);
+    // Process the final result
+    setTimeout(async () => {
+      try {
+        const processedText = processPanoramaText(capturedTexts);
+        console.log("📷 Panorama Combined Result:", processedText);
 
-      const { medicationName, dosage, instructions } =
-        processOcrText(processedText);
-      const sanitizedText = `${medicationName} ${dosage} ${instructions}`;
+        // Use the best extraction found during motion capture, or process the combined text
+        const finalExtraction = extractedMedication && isExtractionComplete(extractedMedication) 
+          ? extractedMedication 
+          : processedText
 
-      // Send ONLY the final combined result to the backend
-      console.log(
-        "🧠 Parsed Text Service: ===============================================================================>",
-        sanitizedText
-      );
-      handleParsedText(sanitizedText)
-        .then((res) => {
+        console.log("🧠 Final Extracted Data:", finalExtraction);
+
+        // Send the final result to the backend
+        try {
+          const res = await handleParsedText(`${finalExtraction.toString()} ${processedText}`);
           console.log("🧠 Parsed Text:", JSON.stringify(res));
-        })
-        .catch((err) => {
-          console.log("🧠 Parsed Text Error:", JSON.stringify(err));
-        })
-        .finally(() => {
-          // Navigate with panorama-enhanced data
-          router.replace({
-            pathname: "/medication/add",
-            params: {
-              name: medicationName || "Medication from panorama scan",
-              dosage: dosage,
-              frequency: instructions,
-              instructions: processedText.slice(0, 500), // More text from panorama
-              scannedText: processedText,
-              captureMethod: "panorama",
-              captureCount: capturedTexts.length.toString(),
-            },
-          });
-
-          setIsProcessing(false);
-        });
-    }, 1500); // Longer processing time for panorama stitching
+          
+          // Verify response structure
+          if (res && res.data && res.data.parseMedicationLabel && res.data.parseMedicationLabel.data) {
+            await navigateToConfirmation(res.data.parseMedicationLabel.data);
+          } else {
+            console.warn("⚠️ Unexpected response structure:", res);
+            throw new Error("Invalid response structure");
+          }
+        } catch (parseError) {
+          console.error("🧠 Parse/Navigation Error:", parseError);
+          handleNavigationError(parseError);
+        }
+      } catch (error) {
+        console.error("❌ Error in stopPanoramaCapture:", error);
+        handleNavigationError(error);
+      } finally {
+        // Reset states
+        setIsProcessing(false);
+        setIsComplete(false);
+        setExtractedMedication(null);
+      }
+    }, 1500);
   };
 
-  // Updated startPanoramaCapture - REMOVE handleParsedText from interval
   const startPanoramaCapture = async () => {
-    // 1️⃣ If there’s already an interval, clear it first
+    // Clear any existing intervals
     if (captureIntervalRef.current) {
       clearInterval(captureIntervalRef.current);
       captureIntervalRef.current = null;
     }
+    
     setIsRotatingCapture(true);
     setCapturedTexts([]);
     setRotationProgress(0);
+    setExtractedMedication(null);
+    setIsComplete(false);
+    lastCaptureTimeRef.current = 0;
 
     // Animate progress bar for panorama duration
     Animated.timing(progressAnimation, {
       toValue: 1,
-      duration: 10000, // 10 seconds for complete panorama
+      duration: 15000, // 15 seconds for complete panorama with motion detection
       useNativeDriver: false,
     }).start();
 
-    let captureCount = 0;
-    const captureFrequency = 200; // Capture every 200ms for smoother panorama
-    const totalDuration = 10000; // 10 seconds total
-    const maxCaptures = totalDuration / captureFrequency; // 50 captures
-
-    captureIntervalRef.current = setInterval(async () => {
-      try {
-        // @ts-expect-error
-        const photo = await cameraRef.current?.takePictureAsync({
-          quality: 0.8, // Good quality for panorama stitching
-          skipProcessing: false,
-          base64: false,
-          flash: flashEnabled ? "on" : "off",
-          autoFocus: true,
-          // Enable continuous autofocus for panorama
-          focusDepth: 0,
-        });
-
-        if (photo?.uri) {
-          try {
-            // Process OCR in background for real-time feedback
-            const recognized = await MlkitOcr.detectFromFile(photo.uri);
-            const labelText = recognized
-              .map((block) => block.text)
-              .join("\n")
-              .trim();
-
-            if (labelText && labelText.length > 5) {
-              // Filter out noise
-              setCapturedTexts((prev) => {
-                // Keep only unique text segments to avoid duplicates
-                const newTexts = [...prev, labelText];
-                return newTexts.slice(-30); // Keep last 30 captures for memory efficiency
-              });
-              console.log(
-                `📷 Panorama OCR ${captureCount + 1}:`,
-                labelText.slice(0, 80)
-              );
-            }
-
-            // Save intermediate frames for panorama stitching reference
-            if (captureCount % 5 === 0) {
-              // Save every 5th frame
-              const frameIndex = Math.floor(captureCount / 5);
-              const framePath =
-                FileSystem.documentDirectory +
-                `panorama_frame_${frameIndex}.jpg`;
-              await FileSystem.copyAsync({ from: photo.uri, to: framePath });
-            }
-
-            // REMOVED: handleParsedText call from here - only call once at the end
-          } catch (ocrError) {
-            console.log("OCR error during panorama capture:", ocrError);
-          }
-        }
-
-        captureCount++;
-        const progress = (captureCount / maxCaptures) * 100;
-        setRotationProgress(Math.min(progress, 100));
-
-        // 2️⃣ as soon as we hit the cap, tear it down
-        if (captureCount >= maxCaptures && captureIntervalRef.current) {
-          stopPanoramaCapture();
-        }
-      } catch (error) {
-        console.error("Error during panorama capture:", error);
+    // Set up completion timer (fallback)
+    setTimeout(() => {
+      if (isRotatingCapture && !isComplete) {
+        console.log("📱 Motion capture timeout reached");
+        stopPanoramaCapture();
       }
-    }, captureFrequency);
+    }, 15000);
+
+    // Update progress periodically
+    const progressInterval = setInterval(() => {
+      setRotationProgress(prev => {
+        const nextProgress = prev + (100 / 150); // 15 seconds = 150 intervals of 100ms
+        if (nextProgress >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return nextProgress;
+      });
+    }, 100);
   };
+
   const toggleCameraFacing = () => {
     setFacing((current: CameraType) => (current === "back" ? "front" : "back"));
   };
@@ -413,14 +628,13 @@ export default function ScanMedicationScreen() {
         ref={cameraRef}
         flash={flashEnabled ? "on" : "off"}
         focusable={true}
-        onMoveShouldSetResponderCapture={(event) => {
-          console.log("🔍 Move Should Set Responder Capture", event);
-          return true;
-        }}
       >
         {/* Scanning frame overlay */}
         <View style={styles.overlay}>
-          <View style={styles.scanFrame}>
+          <View style={[
+            styles.scanFrame,
+            isMotionDetected && isRotatingCapture && styles.scanFrameActive
+          ]}>
             <View style={styles.cornerTopLeft} />
             <View style={styles.cornerTopRight} />
             <View style={styles.cornerBottomLeft} />
@@ -429,6 +643,16 @@ export default function ScanMedicationScreen() {
             {/* Guide lines */}
             <View style={styles.guideLineHorizontal} />
             <View style={styles.guideLineVertical} />
+
+            {/* Motion indicator */}
+            {isRotatingCapture && (
+              <View style={styles.motionIndicator}>
+                <View style={[
+                  styles.motionDot,
+                  isMotionDetected && styles.motionDotActive
+                ]} />
+              </View>
+            )}
 
             {/* Rotation progress indicator */}
             {isRotatingCapture && (
@@ -452,13 +676,15 @@ export default function ScanMedicationScreen() {
             {captureMode === "single"
               ? "Position the medication label within the frame"
               : isRotatingCapture
-                ? "Keep rotating slowly and steadily..."
-                : "Hold bottle in frame and tap to start panorama capture"}
+                ? isMotionDetected 
+                  ? "Perfect! Keep rotating slowly..."
+                  : "Rotate the bottle slowly and steadily"
+                : "Hold bottle in frame and tap to start motion capture"}
           </Text>
 
           {captureMode === "rotating" && !isRotatingCapture && (
             <Text style={styles.tipText}>
-              Slowly rotate 360° for complete panorama scan
+              Slowly rotate 360° - motion sensors will auto-capture frames
             </Text>
           )}
 
@@ -470,6 +696,25 @@ export default function ScanMedicationScreen() {
               <Text style={styles.captureCountText}>
                 Captured: {capturedTexts.length} segments
               </Text>
+              {/* {extractedMedication && (
+                <View style={styles.extractionPreview}>
+                  {extractedMedication.medicationName && (
+                    <Text style={styles.extractedText}>
+                      📋 {extractedMedication.medicationName}
+                    </Text>
+                  )}
+                  {extractedMedication.dosage && (
+                    <Text style={styles.extractedText}>
+                      💊 {extractedMedication.dosage}
+                    </Text>
+                  )}
+                  {extractedMedication.instructions && (
+                    <Text style={styles.extractedText}>
+                      ⏰ {extractedMedication.instructions}
+                    </Text>
+                  )}
+                </View>
+              )} */}
             </View>
           )}
         </View>
@@ -498,6 +743,18 @@ export default function ScanMedicationScreen() {
             color={captureMode === "rotating" ? "#00FF88" : "#FFFFFF"}
           />
         </TouchableOpacity>
+
+        {/* Motion data display (debug) */}
+        {isRotatingCapture && (
+          <View style={styles.motionDebug}>
+            <Text style={styles.motionText}>
+              Motion: {isMotionDetected ? "🟢" : "🔴"}
+            </Text>
+            <Text style={styles.motionText}>
+              Y: {motionData.y.toFixed(2)}
+            </Text>
+          </View>
+        )}
 
         {/* Camera controls */}
         <View style={styles.controls}>
@@ -554,12 +811,11 @@ export default function ScanMedicationScreen() {
               </View>
             </View>
 
-            <Text style={styles.instructionsTitle}>How does it work?</Text>
+            <Text style={styles.instructionsTitle}>Smart Motion Scanning</Text>
 
             <Text style={styles.instructionsDescription}>
-              Hold your smartphone steady and position it so the medication
-              details are within the frame on your screen. Ensure there&apos;s
-              good lighting.
+              For cylindrical bottles, use rotation mode. To scan a flat label, toggle to single mode by pressing the loop button looks like this &nbsp; <RotateCw size={24}  color="#00FF88" /> 
+              &nbsp; in the top left corner.
             </Text>
 
             <TouchableOpacity
@@ -579,12 +835,12 @@ export default function ScanMedicationScreen() {
             <ActivityIndicator color={Colors.light.tint} size="large" />
             <Text style={styles.processingText}>
               {captureMode === "rotating"
-                ? "Processing panorama scan..."
+                ? "Processing motion-captured data..."
                 : "Analyzing medication label..."}
             </Text>
             <Text style={styles.processingSubtext}>
               {captureMode === "rotating"
-                ? "Stitching panorama segments together"
+                ? "Combining all captured frames and extracting complete medication info"
                 : "Extracting medication details"}
             </Text>
           </View>
@@ -615,6 +871,10 @@ const styles = StyleSheet.create({
     position: "relative",
     borderColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 1,
+  },
+  scanFrameActive: {
+    borderColor: "#00FF88",
+    borderWidth: 2,
   },
   cornerTopLeft: {
     position: "absolute",
@@ -809,7 +1069,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   instructionsCard: {
-    backgroundColor: "#000000",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     alignItems: "center",
     width: "100%",
     height: "100%",
@@ -928,5 +1188,44 @@ const styles = StyleSheet.create({
   },
   permissionButton: {
     minWidth: 200,
+  },
+  motionIndicator: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  motionDotActive: {
+    backgroundColor: "#FF0000",
+  },
+  motionDot: {
+    backgroundColor: "#FFFFFF",
+  },
+  extractionPreview: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },  
+  extractedText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  motionDebug: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+  },
+  motionText: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    marginTop: 4,
   },
 });

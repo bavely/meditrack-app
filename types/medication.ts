@@ -45,3 +45,14 @@ export interface FrequencyOption {
   name: string;
   value: string;
 }
+
+export interface ParsedMedication {
+  name: string;
+  dosage: string;
+  instructions: string;
+  therapy: string | null;
+}
+
+export interface ExtractedMedication {
+  medicationName: string;
+}
