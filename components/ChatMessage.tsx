@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   assistantBubble: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: Colors.light.input,
     borderBottomLeftRadius: 4,
   },
   text: {
