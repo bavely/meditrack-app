@@ -6,7 +6,8 @@
 
 const primaryColorLight = '#38bdf8';
 const primaryColorDark = '#38bdf8';
-
+const white = '#FFFFFF';
+const black = '#000000';
 
 export const Colors = {
   light: {
@@ -21,6 +22,9 @@ export const Colors = {
 
     tabIconSelected: primaryColorLight,
     input: '#e2e8f0',
+    card: white,
+    foreground: white,
+    shadow: black,
 
   },
   dark: {
@@ -35,6 +39,9 @@ export const Colors = {
 
     tabIconSelected: primaryColorDark,
     input: '#1e293b',
+    card: '#1e293b',
+    foreground: black,
+    shadow: black,
 
   },
 };

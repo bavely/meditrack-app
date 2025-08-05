@@ -1,8 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { MedicationDose } from "@/types/medication";
 import { Check, X } from "lucide-react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface DoseCardProps {
   dose: MedicationDose;
@@ -77,8 +77,8 @@ export default function DoseCard({ dose, onTake, onSkip }: DoseCardProps) {
   );
 }
 
-
-const styles = StyleSheet.create({
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
   container: {
     flexDirection: "row",
     backgroundColor: Colors.light.surface,
@@ -162,3 +162,4 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.tint,
   },
 });
+}

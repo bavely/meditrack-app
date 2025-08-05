@@ -1,14 +1,14 @@
-import React from "react";
-import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
-} from "react-native";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import React from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 
 interface ButtonProps {
   title: string;
@@ -107,8 +107,8 @@ export default function Button({
   );
 }
 
-
-const styles = StyleSheet.create({
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
@@ -174,3 +174,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+}

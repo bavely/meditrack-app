@@ -1,8 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Medication } from "@/types/medication";
 import { AlertCircle, Calendar, Clock, Pill } from "lucide-react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface MedicationCardProps {
   medication: Medication;
@@ -61,8 +61,8 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
   );
 }
 
-
-const styles = StyleSheet.create({
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
   container: {
     flexDirection: "row",
     backgroundColor: Colors.light.surface,
@@ -126,3 +126,4 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
+}
