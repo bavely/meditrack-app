@@ -1,7 +1,7 @@
 import { medicationTypes } from "@/constants/medications";
 import { useMedicationStore } from "@/store/medication-store";
 import { useRouter } from "expo-router";
-import { Camera, ChevronDown, ChevronRight, Pill } from "lucide-react-native";
+import { Camera, ChevronRight, Pill } from "lucide-react-native";
 import { useState } from "react";
 import {
   ScrollView,
@@ -10,8 +10,10 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+
 import { useColorScheme } from "@/hooks/useColorScheme";
 import Button from "../../components/ui/Button";
+
 import { Colors } from "../../constants/Colors";
 
 export default function AddMedicationScreen() {
@@ -64,12 +66,11 @@ export default function AddMedicationScreen() {
   
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Add New Medication</Text>
+
       
       {/* Medication type selector */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Medication Type</Text>
-        
+
         <TouchableOpacity
           style={styles.typeSelector}
           onPress={() => setShowTypeSelector(!showTypeSelector)}
@@ -88,6 +89,7 @@ export default function AddMedicationScreen() {
           
           <ChevronDown size={20} color={Colors[colorScheme].tint} />
         </TouchableOpacity>
+
         
         {showTypeSelector && (
           <View style={styles.typeOptions}>
@@ -117,21 +119,23 @@ export default function AddMedicationScreen() {
       
       {/* Scan button */}
       <TouchableOpacity style={styles.scanButton} onPress={handleScanPress}>
+
         <Camera size={20} color={Colors[colorScheme].tint} />
         <Text style={styles.scanButtonText}>Scan Prescription Label</Text>
         <ChevronRight size={20} color={Colors[colorScheme].tint} />
+
       </TouchableOpacity>
       
       {/* Add Manually button */}
       <TouchableOpacity
-        style={styles.addManuallyButton}
+        style={styles.scanButton}
         onPress={handleAddManuallyPress}
       >
+        <Pill size={20} color={Colors.light.tint} />
         <Text style={styles.addManuallyButtonText}>Add Manually</Text>
+        <ChevronRight size={20} color={Colors.light.tint} />
       </TouchableOpacity>
-      
-      {/* Save button */}
-      <Button onPress={handleSave} title="Confirm" />
+
     </ScrollView>
   );
 }

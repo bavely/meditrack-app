@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { ApolloProvider } from '@apollo/client';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -19,7 +20,14 @@ export default function RootLayout() {
      <ApolloProvider client={apolloClient}>
        <PaperProvider>
  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack 
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: Colors.light.background,
+        },
+      }}
+      >
         { isAuthenticated ? <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> : <Stack.Screen name="(auth)" options={{ headerShown: false }} />}
         <Stack.Screen name="+not-found" />
       </Stack>

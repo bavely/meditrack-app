@@ -1,14 +1,14 @@
-import React from "react";
-import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
-} from "react-native";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import React from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 
 interface ButtonProps {
   title: string;
@@ -175,4 +175,5 @@ function createStyles(colorScheme: 'light' | 'dark') {
       opacity: 0.7,
     },
   });
+
 }

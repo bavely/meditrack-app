@@ -179,6 +179,7 @@ export default function CalendarScreen() {
   );
 }
 
+
 function createStyles(colorScheme: 'light' | 'dark') {
   return StyleSheet.create({
     container: {

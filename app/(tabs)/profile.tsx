@@ -166,6 +166,7 @@ export default function ProfileScreen() {
   );
 }
 
+
 function createStyles(colorScheme: 'light' | 'dark') {
   return StyleSheet.create({
     container: {
