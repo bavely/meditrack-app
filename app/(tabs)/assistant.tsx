@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import ChatMessage from "../../components/ChatMessage";
 import { Colors } from "../../constants/Colors";
+import { spacing } from "../../constants/Theme";
 import { useAIAssistantStore } from "../../store/ai-assistant-store";
 
 export default function AssistantScreen() {
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   header: {
-    padding: 16,
+    padding: spacing.md,
     backgroundColor: Colors.light.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.text,
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -115,12 +116,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    padding: 16,
-    paddingTop: 8,
+    padding: spacing.md,
+    paddingTop: spacing.sm,
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 12,
+    padding: spacing.sm + spacing.xs,
     backgroundColor: Colors.light.background,
     borderTopWidth: 1,
     borderTopColor: Colors.light.text,
@@ -130,16 +131,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.tint,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingRight: 48,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + spacing.xs / 2,
+    paddingRight: spacing.xl + spacing.md,
     maxHeight: 120,
     fontSize: 16,
   },
   sendButton: {
     position: "absolute",
-    right: 20,
-    bottom: 20,
+    right: spacing.lg - spacing.xs,
+    bottom: spacing.lg - spacing.xs,
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -156,13 +157,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
-    padding: 8,
+    padding: spacing.sm,
   },
   loadingText: {
     backgroundColor: Colors.light.tint,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.md,
     fontSize: 14,
     color: "#FFFFFF",
     shadowColor: "#000",

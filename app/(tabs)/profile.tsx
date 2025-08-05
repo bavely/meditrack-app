@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: Colors.light.surface,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
 
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: spacing.sm + spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.icon,
   },
