@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   StyleSheet,
@@ -64,6 +65,7 @@ export default function ScanMedicationScreen() {
   const [motionSensitivity, setMotionSensitivity] = useState(0.5); // Adjustable sensitivity
   const [extractedMedication, setExtractedMedication] = useState<ExtractedMedication | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const cameraRef = useRef(null);
   const captureIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -431,6 +433,7 @@ export default function ScanMedicationScreen() {
   const handleSingleCapture = async () => {
     if (isTakingPicture || isProcessing) return;
     setIsTakingPicture(true);
+    setErrorMessage(null);
 
     try {
       // @ts-expect-error
@@ -478,8 +481,16 @@ export default function ScanMedicationScreen() {
         
         } catch (ocrError) {
           console.error("OCR processing error:", ocrError);
-            // TODO: Handle error here
-          router.push("/medication/add")
+          const message = "Unable to read the medication label.";
+          setErrorMessage(message);
+          Alert.alert(
+            "Scanning Error",
+            "Unable to read the medication label. You can retry or enter the details manually.",
+            [
+              { text: "Retry", onPress: () => setErrorMessage(null) },
+              { text: "Enter Manually", onPress: () => router.push("/medication/add") }
+            ]
+          );
         }
       }
     } catch (error) {
@@ -844,6 +855,12 @@ export default function ScanMedicationScreen() {
                 : "Extracting medication details"}
             </Text>
           </View>
+        </View>
+      )}
+
+      {errorMessage && (
+        <View style={styles.errorOverlay}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       )}
     </View>
@@ -1227,5 +1244,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#FFFFFF",
     marginTop: 4,
+  },
+  errorOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(255, 77, 77, 0.9)",
+    padding: 12,
+  },
+  errorText: {
+    color: "#FFFFFF",
+    textAlign: "center",
   },
 });
