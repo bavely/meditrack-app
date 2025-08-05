@@ -15,8 +15,10 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,6 +28,8 @@ import MlkitOcr from "react-native-mlkit-ocr";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
+import { sizes } from "../../constants/Theme";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Get screen dimensions for responsive styling
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -45,6 +49,8 @@ interface ExtractedMedication {
 }
 
 export default function ScanMedicationScreen() {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   const router = useRouter();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
@@ -64,6 +70,7 @@ export default function ScanMedicationScreen() {
   const [motionSensitivity, setMotionSensitivity] = useState(0.5); // Adjustable sensitivity
   const [extractedMedication, setExtractedMedication] = useState<ExtractedMedication | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const cameraRef = useRef(null);
   const captureIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -431,6 +438,7 @@ export default function ScanMedicationScreen() {
   const handleSingleCapture = async () => {
     if (isTakingPicture || isProcessing) return;
     setIsTakingPicture(true);
+    setErrorMessage(null);
 
     try {
       // @ts-expect-error
@@ -478,8 +486,16 @@ export default function ScanMedicationScreen() {
         
         } catch (ocrError) {
           console.error("OCR processing error:", ocrError);
-            // TODO: Handle error here
-          router.push("/medication/add")
+          const message = "Unable to read the medication label.";
+          setErrorMessage(message);
+          Alert.alert(
+            "Scanning Error",
+            "Unable to read the medication label. You can retry or enter the details manually.",
+            [
+              { text: "Retry", onPress: () => setErrorMessage(null) },
+              { text: "Enter Manually", onPress: () => router.push("/medication/add") }
+            ]
+          );
         }
       }
     } catch (error) {
@@ -606,7 +622,7 @@ export default function ScanMedicationScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionContainer}>
+      <SafeAreaView style={styles.permissionContainer}>
         <Text style={styles.permissionTitle}>Camera Permission Required</Text>
         <Text style={styles.permissionText}>
           We need camera permission to scan your medication labels.
@@ -616,12 +632,12 @@ export default function ScanMedicationScreen() {
           onPress={requestPermission}
           style={styles.permissionButton}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <CameraView
         style={styles.camera}
         facing={facing}
@@ -781,7 +797,7 @@ export default function ScanMedicationScreen() {
             disabled={isTakingPicture || isProcessing}
           >
             {isTakingPicture || isProcessing ? (
-              <ActivityIndicator color="#FFFFFF" size="large" />
+              <ActivityIndicator color={Colors[colorScheme].foreground} size="large" />
             ) : isRotatingCapture ? (
               <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
             ) : captureMode === "rotating" ? (
@@ -832,7 +848,7 @@ export default function ScanMedicationScreen() {
       {isProcessing && (
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
-            <ActivityIndicator color={Colors.light.tint} size="large" />
+            <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
             <Text style={styles.processingText}>
               {captureMode === "rotating"
                 ? "Processing motion-captured data..."
@@ -846,11 +862,18 @@ export default function ScanMedicationScreen() {
           </View>
         </View>
       )}
-    </View>
+
+      {errorMessage && (
+        <View style={styles.errorOverlay}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000000",
@@ -1049,9 +1072,9 @@ const styles = StyleSheet.create({
     borderColor: "#FF0000",
   },
   captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: sizes.lg,
+    height: sizes.lg,
+    borderRadius: sizes.lg / 2,
     backgroundColor: "#FFFFFF",
   },
   disabledButton: {
@@ -1171,18 +1194,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors[colorScheme].background,
   },
   permissionTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: Colors[colorScheme].text,
     marginBottom: 16,
     textAlign: "center",
   },
   permissionText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: Colors[colorScheme].text,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -1228,4 +1251,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: 4,
   },
+  errorOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(255, 77, 77, 0.9)",
+    padding: 12,
+  },
+  errorText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
 });
+
+}

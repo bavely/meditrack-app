@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Medication } from "@/types/medication";
 import { AlertCircle, Calendar, Clock, Pill } from "lucide-react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -9,8 +10,12 @@ interface MedicationCardProps {
 }
 
 export default function MedicationCard({ medication, onPress }: MedicationCardProps) {
-  const isLowStock = medication.remainingDoses && medication.remainingDoses <= 7;
-  
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
+  const isLowStock =
+    typeof medication.remainingDoses === "number" &&
+    medication.remainingDoses <= 7;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -18,33 +23,33 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
       activeOpacity={0.7}
     >
       <View style={[styles.iconContainer, { backgroundColor: medication.color }]}>
-        <Pill size={24} color="#FFFFFF" />
+        <Pill size={24} color={Colors[colorScheme].foreground} />
       </View>
-      
+
       <View style={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.name}>{medication.name}</Text>
           <Text style={styles.dosage}>{medication.dosage}</Text>
         </View>
-        
+
         <View style={styles.details}>
           <View style={styles.detailItem}>
-            <Clock size={16} color={Colors.light.tint} />
+            <Clock size={16} color={Colors[colorScheme].tint} />
             <Text style={styles.detailText}>{medication.frequency}</Text>
           </View>
-          
+
           {medication.refillDate && (
             <View style={styles.detailItem}>
-              <Calendar size={16} color={Colors.light.tint} />
+              <Calendar size={16} color={Colors[colorScheme].tint} />
               <Text style={styles.detailText}>
                 Refill: {new Date(medication.refillDate).toLocaleDateString()}
               </Text>
             </View>
           )}
-          
+
           {isLowStock && (
             <View style={styles.warningContainer}>
-              <AlertCircle size={16} color={Colors.light.tint} />
+              <AlertCircle size={16} color={Colors[colorScheme].tint} />
               <Text style={styles.warningText}>
                 Low stock: {medication.remainingDoses} doses left
               </Text>
@@ -56,67 +61,72 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    backgroundColor: Colors.light.background,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.text,
-  },
-  dosage: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.light.text,
-  },
-  details: {
-    gap: 8,
-  },
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    color: Colors.light.text,
-  },
-  warningContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  warningText: {
-    fontSize: 14,
-    color: Colors.light.text,
-    fontWeight: "500",
-  },
-});
+
+
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      backgroundColor: Colors[colorScheme].surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    iconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 16,
+    },
+    contentContainer: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    name: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: Colors[colorScheme].text,
+    },
+    dosage: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: Colors[colorScheme].text,
+    },
+    details: {
+      gap: 8,
+    },
+    detailItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    detailText: {
+      fontSize: 14,
+      color: Colors[colorScheme].text,
+    },
+    warningContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 4,
+    },
+    warningText: {
+      fontSize: 14,
+      color: Colors[colorScheme].text,
+      fontWeight: "500",
+    },
+  });
+
+}

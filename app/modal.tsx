@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { spacing } from "../constants/Theme";
 
 export default function ModalScreen() {
   return (
@@ -86,21 +87,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: spacing.md,
+    paddingBottom: spacing.xl + spacing.sm,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
     color: Colors.light.text,
-    marginBottom: 24,
+    marginBottom: spacing.lg,
     textAlign: "center",
   },
   section: {
     backgroundColor: Colors.light.tint,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.text,
-    marginBottom: 12,
+    marginBottom: spacing.sm + spacing.xs,
   },
   paragraph: {
     fontSize: 16,
@@ -119,13 +120,13 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   featureItem: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   featureTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   featureDescription: {
     fontSize: 16,
@@ -136,6 +137,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     color: Colors.light.text,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
 });

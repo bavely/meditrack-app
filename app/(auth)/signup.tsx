@@ -106,12 +106,12 @@ export default function SignupScreen() {
         gender,
         dob,
       });
-      const { accessToken, refreshToken } = response.data.registerUser.data;
+      const { accessToken, refreshToken } = response.data;
 
       if (
         !accessToken ||
         !refreshToken ||
-        !response.data.registerUser.success
+        !response.success
       ) {
         setUserMsg({
           type: "error",

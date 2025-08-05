@@ -11,7 +11,11 @@ interface AuthState {
   isAuthenticated: boolean
   accessToken: string | null
   refreshToken: string | null
-  login: (email: string, password: string) => Promise<any>
+  /**
+   * Complete login using pre-issued auth tokens.
+   * Stores tokens and loads the current user; throws on failure.
+   */
+  login: (accessToken: string, refreshToken: string) => Promise<void>
   signup: (accessToken: string, refreshToken: string) => Promise<void>
   logout: () => Promise<void>
   setUser: (user: LocalUser | null) => void
@@ -32,7 +36,10 @@ export const useAuthStore = create<AuthState>()(
       // });
       // },
 
-      login: async (accessToken: string, refreshToken: string) => {
+      login: async (
+        accessToken: string,
+        refreshToken: string
+      ): Promise<void> => {
 
 
 
@@ -40,12 +47,12 @@ export const useAuthStore = create<AuthState>()(
         await AsyncStorage.setItem('refreshToken', refreshToken);
 
         const userresonse = await getViewerProfile();
-        console.log('User response:',JSON.stringify(userresonse));
-        const user = userresonse.data.getUser.data;
+        console.log('User response:', JSON.stringify(userresonse));
 
-        if (!user) {
+        const user = userresonse.data;
+
+        if (!userresonse.success || !user) {
           throw new Error('Could not load your profile. Please try again.');
-
         }
         if (!user.emailVerified) {
           throw new Error(
@@ -68,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
           await AsyncStorage.setItem('accessToken', accessToken);
           await AsyncStorage.setItem('refreshToken', refreshToken);
           const userresonse = await getViewerProfile();
-          let user = userresonse.data.getUser.data
+          const user = userresonse.data
           console.log('User response:', user);
           if (!user || !accessToken || !refreshToken) {
             throw new Error('Login failed, Please try again later.');
