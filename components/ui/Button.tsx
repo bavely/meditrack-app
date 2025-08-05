@@ -108,69 +108,71 @@ export default function Button({
 }
 
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    gap: 8,
-  },
-  primaryContainer: {
-    backgroundColor: Colors.light.tint,
-  },
-  secondaryContainer: {
-    backgroundColor: Colors.light.surface,
-  },
-  outlineContainer: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: Colors.light.tint,
-  },
-  ghostContainer: {
-    backgroundColor: "transparent",
-  },
-  smallContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  mediumContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  largeContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-  },
-  disabledContainer: {
-    opacity: 0.5,
-  },
-  text: {
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  primaryText: {
-    color: "#FFFFFF",
-  },
-  secondaryText: {
-    color: Colors.light.text,
-  },
-  outlineText: {
-    color: Colors.light.tint,
-  },
-  ghostText: {
-    color: Colors.light.tint,
-  },
-  smallText: {
-    fontSize: 14,
-  },
-  mediumText: {
-    fontSize: 16,
-  },
-  largeText: {
-    fontSize: 18,
-  },
-  disabledText: {
-    opacity: 0.7,
-  },
-});
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+      gap: 8,
+    },
+    primaryContainer: {
+      backgroundColor: Colors[colorScheme].tint,
+    },
+    secondaryContainer: {
+      backgroundColor: Colors[colorScheme].surface,
+    },
+    outlineContainer: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: Colors[colorScheme].tint,
+    },
+    ghostContainer: {
+      backgroundColor: "transparent",
+    },
+    smallContainer: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    mediumContainer: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+    },
+    largeContainer: {
+      paddingVertical: 16,
+      paddingHorizontal: 32,
+    },
+    disabledContainer: {
+      opacity: 0.5,
+    },
+    text: {
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    primaryText: {
+      color: Colors[colorScheme].foreground,
+    },
+    secondaryText: {
+      color: Colors[colorScheme].text,
+    },
+    outlineText: {
+      color: Colors[colorScheme].tint,
+    },
+    ghostText: {
+      color: Colors[colorScheme].tint,
+    },
+    smallText: {
+      fontSize: 14,
+    },
+    mediumText: {
+      fontSize: 16,
+    },
+    largeText: {
+      fontSize: 18,
+    },
+    disabledText: {
+      opacity: 0.7,
+    },
+  });
+}

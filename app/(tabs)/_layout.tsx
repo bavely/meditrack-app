@@ -12,26 +12,18 @@ import "../../global.css";
 
 export default function TabLayout() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-
-  const bgcolor =
-    colorScheme === "light" ? Colors.light.background : Colors.dark.background;
-  const textcolor =
-    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
-
-    const tintcolor =
-    colorScheme === "light" ? Colors.light.tint : Colors.dark.tint;
+  const colorScheme = useColorScheme() ?? "light";
   
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: tintcolor,
-          tabBarInactiveTintColor: textcolor,
+          tabBarActiveTintColor: Colors[colorScheme].tint,
+          tabBarInactiveTintColor: Colors[colorScheme].text,
           tabBarStyle: {
-            backgroundColor: bgcolor,
+            backgroundColor: Colors[colorScheme].background,
             borderTopWidth: 1,
-            borderTopColor: tintcolor,
+            borderTopColor: Colors[colorScheme].tint,
             elevation: 0,
             height: sizes.lg,
             paddingBottom: spacing.sm,
@@ -41,8 +33,7 @@ export default function TabLayout() {
             fontWeight: "500",
           },
           headerStyle: {
-            backgroundColor: bgcolor,
-
+            backgroundColor: Colors[colorScheme].background,
           },
           headerShadowVisible: true,
           headerTitleStyle: {
@@ -50,7 +41,7 @@ export default function TabLayout() {
             fontSize: 24,
           },
           headerTitleAlign: "center",
-          headerTintColor: textcolor,
+          headerTintColor: Colors[colorScheme].text,
 
         }}
       >

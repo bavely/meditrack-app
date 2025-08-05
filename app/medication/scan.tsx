@@ -29,6 +29,7 @@ import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
 import { sizes } from "../../constants/Theme";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Get screen dimensions for responsive styling
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -48,6 +49,8 @@ interface ExtractedMedication {
 }
 
 export default function ScanMedicationScreen() {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   const router = useRouter();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
@@ -794,7 +797,7 @@ export default function ScanMedicationScreen() {
             disabled={isTakingPicture || isProcessing}
           >
             {isTakingPicture || isProcessing ? (
-              <ActivityIndicator color="#FFFFFF" size="large" />
+              <ActivityIndicator color={Colors[colorScheme].foreground} size="large" />
             ) : isRotatingCapture ? (
               <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
             ) : captureMode === "rotating" ? (
@@ -845,7 +848,7 @@ export default function ScanMedicationScreen() {
       {isProcessing && (
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
-            <ActivityIndicator color={Colors.light.tint} size="large" />
+            <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
             <Text style={styles.processingText}>
               {captureMode === "rotating"
                 ? "Processing motion-captured data..."
@@ -869,7 +872,8 @@ export default function ScanMedicationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000000",
@@ -1190,18 +1194,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors[colorScheme].background,
   },
   permissionTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.light.text,
+    color: Colors[colorScheme].text,
     marginBottom: 16,
     textAlign: "center",
   },
   permissionText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: Colors[colorScheme].text,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -1260,3 +1264,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
+}

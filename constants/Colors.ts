@@ -17,6 +17,7 @@ export const Colors = {
     secondary: '#64748b',
     tint: primaryColorLight,
     icon: '#687076',
+    foreground: '#ffffff',
     tabIconDefault: '#687076',
 
     tabIconSelected: primaryColorLight,
@@ -31,6 +32,7 @@ export const Colors = {
     secondary: '#94a3b8',
     tint: primaryColorDark,
     icon: '#9BA1A6',
+    foreground: '#ffffff',
     tabIconDefault: '#9BA1A6',
 
     tabIconSelected: primaryColorDark,
