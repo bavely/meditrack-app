@@ -1,6 +1,5 @@
 import * as FileSystem from "expo-file-system";
-// @ts-ignore - opencv may not have types in RN environment
-import cv from "opencv4nodejs";
+const cv = require('opencv.js');
 
 /**
  * Unwrap a cylindrical label from a recorded video.

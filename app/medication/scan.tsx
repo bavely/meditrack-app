@@ -1,6 +1,9 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
+import * as Speech from "expo-speech";
 import {
   Camera,
   Flashlight,
@@ -20,14 +23,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
-import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
 import MlkitOcr from "react-native-mlkit-ocr";
+import Svg, { Circle } from "react-native-svg";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -119,12 +119,14 @@ export default function ScanMedicationScreen() {
     });
 
     try {
-      // @ts-expect-error
+       // @ts-ignore: stopRecording may not be typed on cameraRef
       const video = await cameraRef.current.recordAsync({
         maxDuration: duration / 1000,
-        quality: "720p",
-        mute: false,
+        
       });
+      if (!video?.uri) {
+        throw new Error("No video URI returned from recording");
+      }
       await processVideo(video.uri);
     } catch (error) {
       console.error("Recording error:", error);
@@ -137,7 +139,7 @@ export default function ScanMedicationScreen() {
 
   const stopRecording = () => {
     if (!cameraRef.current) return;
-    // @ts-expect-error
+    // @ts-ignore: stopRecording may not be typed on cameraRef
     cameraRef.current.stopRecording();
   };
 
