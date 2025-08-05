@@ -11,7 +11,11 @@ interface AuthState {
   isAuthenticated: boolean
   accessToken: string | null
   refreshToken: string | null
-  login: (email: string, password: string) => Promise<any>
+  /**
+   * Complete login using pre-issued auth tokens.
+   * Stores tokens and loads the current user; throws on failure.
+   */
+  login: (accessToken: string, refreshToken: string) => Promise<void>
   signup: (accessToken: string, refreshToken: string) => Promise<void>
   logout: () => Promise<void>
   setUser: (user: LocalUser | null) => void
@@ -32,7 +36,10 @@ export const useAuthStore = create<AuthState>()(
       // });
       // },
 
-      login: async (accessToken: string, refreshToken: string) => {
+      login: async (
+        accessToken: string,
+        refreshToken: string
+      ): Promise<void> => {
 
 
 
@@ -41,7 +48,9 @@ export const useAuthStore = create<AuthState>()(
 
         const userresonse = await getViewerProfile();
         console.log('User response:', JSON.stringify(userresonse));
-        const user = userresonse.data;
+
+        const user = userresonse.data.getUser.data;
+
 
         if (!user) {
           throw new Error('Could not load your profile. Please try again.');
