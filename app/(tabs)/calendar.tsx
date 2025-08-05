@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: spacing.sm + spacing.xs,
     backgroundColor: Colors.light.background,
   },
   monthYearText: {

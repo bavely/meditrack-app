@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import React from "react";
 import { Image, ImageBackground, StyleSheet, View } from "react-native";
 import { Button, Text } from "react-native-paper";
+import { spacing } from "../constants/Theme";
 export default function Index() {
   const colorScheme = useColorScheme();
   const bgcolor =
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    padding: 24,
+    padding: spacing.lg,
     // paddingTop: 200,
     flexDirection: "column",
     justifyContent: "space-between",
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   button: {
-    marginTop: 16,
+    marginTop: spacing.md,
     backgroundColor: "#ECEDEE",
 
   },

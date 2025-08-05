@@ -13,6 +13,7 @@ import {
   Text,
   TouchableWithoutFeedback
 } from "react-native";
+import { spacing } from "../../constants/Theme";
 import { Button, TextInput } from 'react-native-paper';
 import { resetPassword } from "../../services/userService";
 
@@ -111,25 +112,25 @@ export default ForgotPassword;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    padding: spacing.lg,
     flexGrow: 1,
     justifyContent: "center",
   },
   title: {
     fontSize: 18,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    padding: spacing.sm + spacing.xs,
+    marginBottom: spacing.sm + spacing.xs,
     color: "#000",
   },
   link: {
-    marginTop: 16,
+    marginTop: spacing.md,
     textAlign: "center",
   },
   logo: {
