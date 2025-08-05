@@ -61,7 +61,7 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.light.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,

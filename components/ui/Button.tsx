@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.tint,
   },
   secondaryContainer: {
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.light.surface,
   },
   outlineContainer: {
     backgroundColor: "transparent",

@@ -77,7 +77,7 @@ export default function DoseCard({ dose, onTake, onSkip }: DoseCardProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.surface,
     borderRadius: 16,
     marginBottom: 12,
     shadowColor:    "#000",
