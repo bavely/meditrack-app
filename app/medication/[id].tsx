@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.light.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     color: Colors.light.tint,
   },
   detailsContainer: {
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.light.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   supplyContainer: {
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.light.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
