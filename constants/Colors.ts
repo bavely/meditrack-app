@@ -4,10 +4,8 @@
  */
 
 
-const tintColorLight = '#38bdf8';
-const tintColorDark = '#a1a1aa';
-const white = '#FFFFFF';
-const black = '#000000';
+const primaryColorLight = '#38bdf8';
+const primaryColorDark = '#38bdf8';
 
 
 export const Colors = {
@@ -21,11 +19,8 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
 
-    tabIconSelected: tintColorLight,
-    input: 'rgba(186, 230, 253, 1)',
-    card: white,
-    foreground: white,
-    shadow: black,
+    tabIconSelected: primaryColorLight,
+    input: '#e2e8f0',
 
   },
   dark: {
@@ -38,11 +33,8 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
 
-    tabIconSelected: tintColorDark,
-    input: 'rgba(12, 74, 110, 1)',
-    card: '#1e293b',
-    foreground: black,
-    shadow: black,
+    tabIconSelected: primaryColorDark,
+    input: '#1e293b',
 
   },
 };

@@ -62,70 +62,67 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
 }
 
 
-function createStyles(colorScheme: 'light' | 'dark') {
-  return StyleSheet.create({
-    container: {
-      flexDirection: "row",
-      backgroundColor: Colors[colorScheme].background,
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
-      shadowColor: Colors[colorScheme].shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    iconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 12,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 16,
-    },
-    contentContainer: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    name: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: Colors[colorScheme].text,
-    },
-    dosage: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: Colors[colorScheme].text,
-    },
-    details: {
-      gap: 8,
-    },
-    detailItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    detailText: {
-      fontSize: 14,
-      color: Colors[colorScheme].text,
-    },
-    warningContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      marginTop: 4,
-    },
-    warningText: {
-      fontSize: 14,
-      color: Colors[colorScheme].text,
-      fontWeight: "500",
-    },
-  });
-}
-
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    backgroundColor: Colors.light.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.text,
+  },
+  dosage: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: Colors.light.text,
+  },
+  details: {
+    gap: 8,
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  warningContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  warningText: {
+    fontSize: 14,
+    color: Colors.light.text,
+    fontWeight: "500",
+  },
+});

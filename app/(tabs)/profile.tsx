@@ -212,7 +212,6 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   section: {
-
     backgroundColor: Colors.light.surface,
     borderRadius: 16,
     padding: 16,

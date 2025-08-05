@@ -78,90 +78,87 @@ export default function DoseCard({ dose, onTake, onSkip }: DoseCardProps) {
 }
 
 
-function createStyles(colorScheme: 'light' | 'dark') {
-  return StyleSheet.create({
-    container: {
-      flexDirection: "row",
-      backgroundColor: Colors[colorScheme].card,
-      borderRadius: 16,
-      marginBottom: 12,
-      shadowColor: Colors[colorScheme].shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 2,
-      overflow: "hidden",
-    },
-    colorIndicator: {
-      width: 6,
-      height: "100%",
-    },
-    contentContainer: {
-      flex: 1,
-      padding: 16,
-    },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    time: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: Colors[colorScheme].text,
-    },
-    status: {
-      fontSize: 14,
-      color: Colors[colorScheme].text,
-    },
-    name: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: Colors[colorScheme].text,
-      marginBottom: 4,
-    },
-    dosage: {
-      fontSize: 16,
-      color: Colors[colorScheme].text,
-    },
-    actionsContainer: {
-      flexDirection: "column",
-      justifyContent: "center",
-      gap: 8,
-      padding: 12,
-    },
-    actionButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    takeButton: {
-      backgroundColor: Colors[colorScheme].tint,
-    },
-    skipButton: {
-      backgroundColor: Colors[colorScheme].tint,
-    },
-    statusIndicator: {
-      justifyContent: "center",
-      alignItems: "center",
-      paddingRight: 16,
-    },
-    statusDot: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    takenDot: {
-      backgroundColor: Colors[colorScheme].tint,
-    },
-    skippedDot: {
-      backgroundColor: Colors[colorScheme].tint,
-    },
-  });
-}
-
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    backgroundColor: Colors.light.surface,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor:    "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: "hidden",
+  },
+  colorIndicator: {
+    width: 6,
+    height: "100%",
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  time: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
+  },
+  status: {
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginBottom: 4,
+  },
+  dosage: {
+    fontSize: 16,
+    color: Colors.light.text,
+  },
+  actionsContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: 8,
+    padding: 12,
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  takeButton: {
+    backgroundColor: Colors.light.tint,
+  },
+  skipButton: {
+    backgroundColor: Colors.light.tint,
+  },
+  statusIndicator: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingRight: 16,
+  },
+  statusDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  takenDot: {
+    backgroundColor: Colors.light.tint,
+  },
+  skippedDot: {
+    backgroundColor: Colors.light.tint,
+  },
+});
