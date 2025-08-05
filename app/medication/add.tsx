@@ -1,7 +1,7 @@
 import { medicationTypes } from "@/constants/medications";
 import { useMedicationStore } from "@/store/medication-store";
 import { useRouter } from "expo-router";
-import { Camera, ChevronRight, Pill } from "lucide-react-native";
+import { Camera, ChevronRight, Pill, ChevronDown } from "lucide-react-native";
 import { useState } from "react";
 import {
   ScrollView,
