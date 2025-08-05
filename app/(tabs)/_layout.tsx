@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Tabs, useRouter } from "expo-router";
 import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
+import "../../global.css";
 
 export default function TabLayout() {
   const router = useRouter();
