@@ -48,7 +48,9 @@ export const useAuthStore = create<AuthState>()(
 
         const userresonse = await getViewerProfile();
         console.log('User response:', JSON.stringify(userresonse));
+
         const user = userresonse.data.getUser.data;
+
 
         if (!user) {
           throw new Error('Could not load your profile. Please try again.');
@@ -75,7 +77,7 @@ export const useAuthStore = create<AuthState>()(
           await AsyncStorage.setItem('accessToken', accessToken);
           await AsyncStorage.setItem('refreshToken', refreshToken);
           const userresonse = await getViewerProfile();
-          let user = userresonse.data.getUser.data
+          const user = userresonse.data
           console.log('User response:', user);
           if (!user || !accessToken || !refreshToken) {
             throw new Error('Login failed, Please try again later.');

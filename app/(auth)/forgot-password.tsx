@@ -38,10 +38,9 @@ const ForgotPassword = () => {
 
     try {
       const res = await resetPassword(email);
-      let respcontent = res.data.forgotPassword;
       setUserMsg({
         type: "success",
-        message: respcontent.data.message,
+        message: res.data.message,
       });
       setSubmitLoading(false);
     } catch (err) {

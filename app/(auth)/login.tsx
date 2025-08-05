@@ -43,14 +43,14 @@ export default function LoginScreen() {
     try {
       const response = await loginUser(email, password);
       console.log("Login response:", response);
-      const { accessToken, refreshToken } = response.data.login.data;
+      const { accessToken, refreshToken } = response.data;
       console.log(
         "Login response:",
         accessToken,
         "====================================and==============================",
         refreshToken
       );
-      if (!accessToken || !refreshToken || !response.data.login.success) {
+      if (!accessToken || !refreshToken || !response.success) {
         setUserMsg({
           type: "error",
           message: "Login failed. Please try again.",
