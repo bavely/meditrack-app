@@ -4,7 +4,11 @@ import { Tabs, useRouter } from "expo-router";
 import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
 import { SafeAreaView } from "react-native";
 import { Colors } from "../../constants/Colors";
+
 import { spacing, sizes } from "../../constants/Theme";
+
+import "../../global.css";
+
 
 export default function TabLayout() {
   const router = useRouter();

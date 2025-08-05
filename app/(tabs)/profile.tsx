@@ -212,10 +212,12 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   section: {
-    backgroundColor: Colors.light.background,
-    borderRadius: spacing.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+
+    backgroundColor: Colors.light.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
