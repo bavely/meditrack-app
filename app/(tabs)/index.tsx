@@ -2,7 +2,7 @@ import { Medication } from "@/types/medication";
 import { useRouter } from "expo-router";
 import { Bell, Pill, Plus } from "lucide-react-native";
 import { useEffect } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
 import { Avatar } from 'react-native-paper';
 import DoseCard from "../../components/DoseCard";
 import EmptyState from "../../components/EmptyState";
@@ -10,6 +10,7 @@ import MedicationCard from "../../components/MedicationCard";
 import ProgressCircle from "../../components/ProgressCircle";
 import SectionHeader from "../../components/SectionHeader";
 import { Colors } from "../../constants/Colors";
+import { spacing, sizes } from "../../constants/Theme";
 import { useAuthStore } from "../../store/auth-store";
 import { useMedicationStore } from "../../store/medication-store";
 export default function DashboardScreen() {
@@ -63,7 +64,7 @@ const handleMedicationPress = (medication: Medication) => {
   };
   
   return (
-    <>
+    <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={[styles.container, { backgroundColor: localbagroundcolor }]} contentContainerStyle={styles.content}>
       <View style={styles.statsContainer} >
         <Avatar.Text
@@ -153,9 +154,9 @@ const handleMedicationPress = (medication: Medication) => {
         onPress={handleAddMedication}
         activeOpacity={0.8}
       >
-        <Plus size={24} color="#FFFFFF" />
+        <Plus size={sizes.sm} color="#FFFFFF" />
       </TouchableOpacity>
-      </>
+    </SafeAreaView>
   );
 }
 
@@ -164,15 +165,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: spacing.md,
     paddingBottom: 100, // Extra padding at bottom for FAB
   },
   statsContainer: {
     flexDirection: "row",
     backgroundColor: "rgba(224, 242, 254, .5)",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     alignItems: "center",
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,
@@ -207,18 +208,18 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: spacing.lg,
+    right: spacing.lg,
+    width: sizes.lg,
+    height: sizes.lg,
+    borderRadius: sizes.lg / 2,
     backgroundColor: Colors.light.tint,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: spacing.xs },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: spacing.sm,
     elevation: 5,
     zIndex: 1000,
   },

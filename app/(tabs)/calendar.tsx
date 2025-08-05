@@ -4,7 +4,8 @@ import { Colors } from "@/constants/Colors";
 import { useMedicationStore } from "@/store/medication-store";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { spacing } from "../../constants/Theme";
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -90,6 +91,7 @@ export default function CalendarScreen() {
   const dosesForSelectedDate = getDosesForSelectedDate();
   
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       {/* Calendar header */}
       <View style={styles.calendarHeader}>
@@ -170,6 +172,7 @@ export default function CalendarScreen() {
         )}
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingVertical: 12,
     backgroundColor: Colors.light.background,
   },
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
   weekdayHeader: {
     flexDirection: "row",
     backgroundColor: Colors.light.background,
-    paddingBottom: 8,
+    paddingBottom: spacing.sm,
   },
   weekdayText: {
     flex: 1,
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     backgroundColor:    Colors.light.background,
-    paddingBottom: 16,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor:  Colors.light.tint,
   },
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 4,
+    padding: spacing.xs,
   },
   selectedDayContainer: {
     backgroundColor: Colors.light.tint,
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   selectedDateHeader: {
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.tint,
   },
@@ -253,6 +256,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dosesContent: {
-    padding: 16,
+    padding: spacing.md,
   },
 });

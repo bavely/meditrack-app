@@ -3,8 +3,9 @@ import { Colors } from "@/constants/Colors";
 import { useMedicationStore } from "@/store/medication-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AlertCircle, Calendar, Clock, Edit, FileText, Trash2 } from "lucide-react-native";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Button from "../../components/ui/Button";
+import { spacing, sizes } from "../../constants/Theme";
 
 export default function MedicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,14 +16,14 @@ export default function MedicationDetailScreen() {
   
   if (!medication) {
     return (
-      <View style={styles.notFoundContainer}>
+      <SafeAreaView style={styles.notFoundContainer}>
         <Text style={styles.notFoundText}>Medication not found</Text>
         <Button
           title="Go Back"
           onPress={() => router.back()}
           style={styles.goBackButton}
         />
-      </View>
+      </SafeAreaView>
     );
   }
   
@@ -69,6 +70,7 @@ export default function MedicationDetailScreen() {
   const refillSoon = remainingDays !== null && remainingDays <= 7;
   
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Medication header */}
       <View style={styles.header}>
@@ -189,6 +191,7 @@ export default function MedicationDetailScreen() {
         style={styles.refillButton}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -198,18 +201,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   content: {
-    padding: 16,
+    padding: spacing.md,
   },
   notFoundContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    padding: spacing.md,
   },
   notFoundText: {
     fontSize: 18,
     color: Colors.light.text,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   goBackButton: {
     minWidth: 200,
@@ -217,23 +220,25 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.light.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+
+    backgroundColor: Colors.light.background,
+    borderRadius: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: spacing.sm,
     elevation: 2,
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: sizes.lg,
+    height: sizes.lg,
+    borderRadius: sizes.lg / 2,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   iconText: {
     fontSize: 24,
