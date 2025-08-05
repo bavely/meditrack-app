@@ -18,6 +18,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -27,6 +28,7 @@ import MlkitOcr from "react-native-mlkit-ocr";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
+import { sizes } from "../../constants/Theme";
 
 // Get screen dimensions for responsive styling
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -617,7 +619,7 @@ export default function ScanMedicationScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionContainer}>
+      <SafeAreaView style={styles.permissionContainer}>
         <Text style={styles.permissionTitle}>Camera Permission Required</Text>
         <Text style={styles.permissionText}>
           We need camera permission to scan your medication labels.
@@ -627,12 +629,12 @@ export default function ScanMedicationScreen() {
           onPress={requestPermission}
           style={styles.permissionButton}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <CameraView
         style={styles.camera}
         facing={facing}
@@ -863,7 +865,7 @@ export default function ScanMedicationScreen() {
           <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -1066,9 +1068,9 @@ const styles = StyleSheet.create({
     borderColor: "#FF0000",
   },
   captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: sizes.lg,
+    height: sizes.lg,
+    borderRadius: sizes.lg / 2,
     backgroundColor: "#FFFFFF",
   },
   disabledButton: {

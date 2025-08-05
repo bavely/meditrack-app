@@ -2,8 +2,9 @@ import { Colors } from "@/constants/Colors";
 import { useRouter } from 'expo-router';
 import { Bell, Clock, HelpCircle, LogOut, Moon, Shield } from "lucide-react-native";
 import React from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "../../store/auth-store";
+import { spacing, sizes } from "../../constants/Theme";
 
 export default function ProfileScreen() {
   const [notifications, setNotifications] = React.useState(true);
@@ -45,6 +46,7 @@ export default function ProfileScreen() {
   };
   
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Profile header */}
       <View style={styles.profileHeader}>
@@ -157,6 +159,7 @@ export default function ProfileScreen() {
       
       <Text style={styles.versionText}>Version 1.0.0</Text>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -166,29 +169,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   content: {
-    padding: 16,
+    padding: spacing.md,
   },
   profileHeader: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.light.icon,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: spacing.sm,
     elevation: 2,
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: sizes.lg,
+    height: sizes.lg,
+    borderRadius: sizes.lg / 2,
     backgroundColor: Colors.light.tint,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   avatarText: {
     fontSize: 24,
@@ -202,7 +205,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   profileEmail: {
     fontSize: 14,
@@ -210,20 +213,20 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: Colors.light.background,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: spacing.sm,
     elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.text,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   settingItem: {
     flexDirection: "row",
@@ -233,13 +236,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.icon,
   },
   settingIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: sizes.md,
+    height: sizes.md,
+    borderRadius: sizes.md / 2,
     backgroundColor: `${Colors.light.tint}20`,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   settingContent: {
     flex: 1,
@@ -265,19 +268,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFF1F0",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.tint,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   versionText: {
     textAlign: "center",
     fontSize: 14,
     color: Colors.light.text,
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
 });
