@@ -4,13 +4,16 @@ import { useMedicationStore } from "@/store/medication-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AlertCircle, Calendar, Clock, Edit, FileText, Trash2 } from "lucide-react-native";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import Button from "../../components/ui/Button";
 import { spacing, sizes } from "../../constants/Theme";
 
 export default function MedicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
+
   const { medications, deleteMedication } = useMedicationStore();
   const medication = medications.find((med) => med.id === id);
   
@@ -87,12 +90,12 @@ export default function MedicationDetailScreen() {
       {/* Action buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-          <Edit size={20} color={Colors.light.tint} />
+          <Edit size={20} color={Colors[colorScheme].tint} />
           <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-          <Trash2 size={20} color={Colors.light.tint} />
+          <Trash2 size={20} color={Colors[colorScheme].tint} />
           <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
         </TouchableOpacity>
       </View>
@@ -100,7 +103,7 @@ export default function MedicationDetailScreen() {
       {/* Medication details */}
       <View style={styles.detailsContainer}>
         <View style={styles.detailItem}>
-          <Clock size={20} color={Colors.light.tint} />
+          <Clock size={20} color={Colors[colorScheme].tint} />
           <View style={styles.detailContent}>
             <Text style={styles.detailLabel}>Frequency</Text>
             <Text style={styles.detailValue}>{medication.frequency}</Text>
@@ -109,7 +112,7 @@ export default function MedicationDetailScreen() {
         
         {medication.refillDate && (
           <View style={styles.detailItem}>
-            <Calendar size={20} color={Colors.light.tint} />
+            <Calendar size={20} color={Colors[colorScheme].tint} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Next Refill</Text>
               <Text style={styles.detailValue}>
@@ -122,7 +125,7 @@ export default function MedicationDetailScreen() {
         
         {medication.instructions && (
           <View style={styles.detailItem}>
-            <FileText size={20} color={Colors.light.tint} />
+            <FileText size={20} color={Colors[colorScheme].tint} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Instructions</Text>
               <Text style={styles.detailValue}>{medication.instructions}</Text>
@@ -136,7 +139,7 @@ export default function MedicationDetailScreen() {
         <View style={styles.warningsContainer}>
           {isLowStock && (
             <View style={styles.warningItem}>
-              <AlertCircle size={20} color={Colors.light.tint} />
+              <AlertCircle size={20} color={Colors[colorScheme].tint} />
               <Text style={styles.warningText}>
                 Low stock: {medication.remainingDoses} doses left
               </Text>
@@ -145,7 +148,7 @@ export default function MedicationDetailScreen() {
           
           {refillSoon && (
             <View style={styles.warningItem}>
-              <AlertCircle size={20} color={Colors.light.tint} />
+              <AlertCircle size={20} color={Colors[colorScheme].tint} />
               <Text style={styles.warningText}>
                 Refill needed in {remainingDays} days
               </Text>
@@ -195,183 +198,185 @@ export default function MedicationDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  content: {
-    padding: spacing.md,
-  },
-  notFoundContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.md,
-  },
-  notFoundText: {
-    fontSize: 18,
-    color: Colors.light.text,
-    marginBottom: spacing.md,
-  },
-  goBackButton: {
-    minWidth: 200,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.light.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: spacing.sm,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: sizes.lg,
-    height: sizes.lg,
-    borderRadius: sizes.lg / 2,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: spacing.md,
-  },
-  iconText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  headerContent: {
-    flex: 1,
-  },
-  medicationName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-    marginBottom: 4,
-  },
-  medicationDosage: {
-    fontSize: 18,
-    color: Colors.light.tint,
-    fontWeight: "600",
-  },
-  actionButtons: {
-    flexDirection: "row",
-    marginBottom: 24,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 16,
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.light.tint,
-    marginLeft: 8,
-  },
-  deleteButtonText: {
-    color: Colors.light.tint,
-  },
-  detailsContainer: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  detailContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: Colors.light.tint,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: Colors.light.text,
-    fontWeight: "500",
-  },
-  warningsContainer: {
-    backgroundColor: "#FFF9E6",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  warningItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  warningText: {
-    fontSize: 16,
-    color: Colors.light.icon,
-    fontWeight: "500",
-    marginLeft: 12,
-  },
-  supplyContainer: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  supplyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.light.text,
-    marginBottom: 16,
-  },
-  supplyContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  supplyDetails: {
-    flex: 1,
-    flexDirection: "row",
-    marginLeft: 16,
-    height: 80,
-    alignItems: "center",
-    justifyContent: "space-around",
-  },
-  supplyItem: {
-    alignItems: "center",
-  },
-  supplyValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-  },
-  supplyLabel: {
-    fontSize: 14,
-    color: Colors.light.text,
-    marginTop: 4,
-  },
-  supplyDivider: {
-    width: 1,
-    height: "50%",
-    backgroundColor: Colors.light.icon,
-  },
-  refillButton: {
-    marginBottom: 24,
-  },
-});
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Colors[colorScheme].background,
+    },
+    content: {
+      padding: spacing.md,
+    },
+    notFoundContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: spacing.md,
+    },
+    notFoundText: {
+      fontSize: 18,
+      color: Colors[colorScheme].text,
+      marginBottom: spacing.md,
+    },
+    goBackButton: {
+      minWidth: 200,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: Colors[colorScheme].surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+      shadowColor: Colors[colorScheme].tint,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: spacing.sm,
+      elevation: 2,
+    },
+    iconContainer: {
+      width: sizes.lg,
+      height: sizes.lg,
+      borderRadius: sizes.lg / 2,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: spacing.md,
+    },
+    iconText: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: Colors[colorScheme].foreground,
+    },
+    headerContent: {
+      flex: 1,
+    },
+    medicationName: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: Colors[colorScheme].text,
+      marginBottom: 4,
+    },
+    medicationDosage: {
+      fontSize: 18,
+      color: Colors[colorScheme].tint,
+      fontWeight: "600",
+    },
+    actionButtons: {
+      flexDirection: "row",
+      marginBottom: 24,
+    },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      marginRight: 16,
+    },
+    actionButtonText: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: Colors[colorScheme].tint,
+      marginLeft: 8,
+    },
+    deleteButtonText: {
+      color: Colors[colorScheme].tint,
+    },
+    detailsContainer: {
+      backgroundColor: Colors[colorScheme].surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 24,
+      shadowColor: Colors[colorScheme].tint,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    detailItem: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 16,
+    },
+    detailContent: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    detailLabel: {
+      fontSize: 14,
+      color: Colors[colorScheme].tint,
+      marginBottom: 4,
+    },
+    detailValue: {
+      fontSize: 16,
+      color: Colors[colorScheme].text,
+      fontWeight: "500",
+    },
+    warningsContainer: {
+      backgroundColor: Colors[colorScheme].surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 24,
+    },
+    warningItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    warningText: {
+      fontSize: 16,
+      color: Colors[colorScheme].icon,
+      fontWeight: "500",
+      marginLeft: 12,
+    },
+    supplyContainer: {
+      backgroundColor: Colors[colorScheme].surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 24,
+      shadowColor: Colors[colorScheme].tint,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    supplyTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: Colors[colorScheme].text,
+      marginBottom: 16,
+    },
+    supplyContent: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    supplyDetails: {
+      flex: 1,
+      flexDirection: "row",
+      marginLeft: 16,
+      height: 80,
+      alignItems: "center",
+      justifyContent: "space-around",
+    },
+    supplyItem: {
+      alignItems: "center",
+    },
+    supplyValue: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: Colors[colorScheme].text,
+    },
+    supplyLabel: {
+      fontSize: 14,
+      color: Colors[colorScheme].text,
+      marginTop: 4,
+    },
+    supplyDivider: {
+      width: 1,
+      height: "50%",
+      backgroundColor: Colors[colorScheme].icon,
+    },
+    refillButton: {
+      marginBottom: 24,
+    },
+  });
+}

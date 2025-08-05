@@ -5,9 +5,12 @@ import { useMedicationStore } from "@/store/medication-store";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { spacing } from "../../constants/Theme";
 
 export default function CalendarScreen() {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -96,13 +99,13 @@ export default function CalendarScreen() {
       {/* Calendar header */}
       <View style={styles.calendarHeader}>
         <TouchableOpacity onPress={goToPreviousMonth}>
-          <ChevronLeft size={24} color={Colors.light.tint} />
+          <ChevronLeft size={24} color={Colors[colorScheme].tint} />
         </TouchableOpacity>
         
         <Text style={styles.monthYearText}>{formatMonthYear(currentMonth)}</Text>
         
         <TouchableOpacity onPress={goToNextMonth}>
-          <ChevronRight size={24} color={Colors.light.text} />
+          <ChevronRight size={24} color={Colors[colorScheme].text} />
         </TouchableOpacity>
       </View>
       
@@ -176,86 +179,89 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  calendarHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + spacing.xs,
-    backgroundColor: Colors.light.background,
-  },
-  monthYearText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.text,
-  },
-  weekdayHeader: {
-    flexDirection: "row",
-    backgroundColor: Colors.light.background,
-    paddingBottom: spacing.sm,
-  },
-  weekdayText: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 14,
-    fontWeight: "500",
-    color:  Colors.light.text,
-  },
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    backgroundColor:    Colors.light.background,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor:  Colors.light.tint,
-  },
-  dayContainer: {
-    width: "14.28%",
-    aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xs,
-  },
-  selectedDayContainer: {
-    backgroundColor: Colors.light.tint,
-    borderRadius: 20,
-  },
-  todayContainer: {
-    borderWidth: 1,
-    borderColor: Colors.light.tint,
-    borderRadius: 20,
-  },
-  dayText: {
-    fontSize: 16,
-    color: Colors.light.text,
-  },
-  selectedDayText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  todayText: {
-    color: Colors.light.tint,
-    fontWeight: "600",
-  },
-  selectedDateHeader: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.tint,
-  },
-  selectedDateText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.text,
-  },
-  dosesContainer: {
-    flex: 1,
-  },
-  dosesContent: {
-    padding: spacing.md,
-  },
-});
+
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Colors[colorScheme].background,
+    },
+    calendarHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      backgroundColor: Colors[colorScheme].background,
+    },
+    monthYearText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: Colors[colorScheme].text,
+    },
+    weekdayHeader: {
+      flexDirection: "row",
+      backgroundColor: Colors[colorScheme].background,
+      paddingBottom: spacing.sm,
+    },
+    weekdayText: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 14,
+      fontWeight: "500",
+      color: Colors[colorScheme].text,
+    },
+    calendarGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      backgroundColor: Colors[colorScheme].background,
+      paddingBottom: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors[colorScheme].tint,
+    },
+    dayContainer: {
+      width: "14.28%",
+      aspectRatio: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: spacing.xs,
+    },
+    selectedDayContainer: {
+      backgroundColor: Colors[colorScheme].tint,
+      borderRadius: 20,
+    },
+    todayContainer: {
+      borderWidth: 1,
+      borderColor: Colors[colorScheme].tint,
+      borderRadius: 20,
+    },
+    dayText: {
+      fontSize: 16,
+      color: Colors[colorScheme].text,
+    },
+    selectedDayText: {
+      color: Colors[colorScheme].foreground,
+      fontWeight: "600",
+    },
+    todayText: {
+      color: Colors[colorScheme].tint,
+      fontWeight: "600",
+    },
+    selectedDateHeader: {
+      padding: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors[colorScheme].tint,
+    },
+    selectedDateText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: Colors[colorScheme].text,
+    },
+    dosesContainer: {
+      flex: 1,
+    },
+    dosesContent: {
+      padding: spacing.md,
+    },
+  });
+}
