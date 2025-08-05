@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { SafeAreaView, Text, View } from 'react-native';
 import { useMedicationStore } from '../../store/medication-store';
@@ -29,6 +30,7 @@ const Confirmation = () => {
         <Text className="text-black dark:text-white">{parsedMedication.therapy}</Text>
       </View>
     </SafeAreaView>
+
   );
 };
 
