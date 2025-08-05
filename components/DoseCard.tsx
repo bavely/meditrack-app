@@ -77,6 +77,7 @@ export default function DoseCard({ dose, onTake, onSkip }: DoseCardProps) {
   );
 }
 
+
 function createStyles(colorScheme: 'light' | 'dark') {
   return StyleSheet.create({
     container: {
@@ -163,3 +164,4 @@ function createStyles(colorScheme: 'light' | 'dark') {
     },
   });
 }
+

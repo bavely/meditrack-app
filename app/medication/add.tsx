@@ -40,7 +40,7 @@ export default function AddMedicationScreen() {
       frequency,
       time,
       instructions,
-      color: Colors.light.background,
+      color: Colors.light.primary,
       icon: selectedType.icon,
       quantity: quantity ? parseInt(quantity, 10) : undefined,
       remainingDoses: quantity ? parseInt(quantity, 10) : undefined,

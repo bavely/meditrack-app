@@ -61,6 +61,7 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
   );
 }
 
+
 function createStyles(colorScheme: 'light' | 'dark') {
   return StyleSheet.create({
     container: {
@@ -127,3 +128,4 @@ function createStyles(colorScheme: 'light' | 'dark') {
     },
   });
 }
+
