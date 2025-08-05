@@ -1,11 +1,11 @@
 import DoseCard from "@/components/DoseCard";
 import EmptyState from "@/components/EmptyState";
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { useMedicationStore } from "@/store/medication-store";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { spacing } from "../../constants/Theme";
 
 export default function CalendarScreen() {
@@ -227,7 +227,7 @@ function createStyles(colorScheme: 'light' | 'dark') {
       padding: spacing.xs,
     },
     selectedDayContainer: {
-      backgroundColor: Colors[colorScheme].tint,
+      backgroundColor: "transparent",
       borderRadius: 20,
     },
     todayContainer: {

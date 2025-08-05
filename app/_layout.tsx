@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import "../global.css";
 import { useAuthStore } from "../store/auth-store";
 import { apolloClient } from '../utils/apollo';
@@ -18,6 +19,7 @@ export default function RootLayout() {
 
   return (
      <ApolloProvider client={apolloClient}>
+      <SafeAreaProvider>
        <PaperProvider>
  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack 
@@ -34,6 +36,7 @@ export default function RootLayout() {
       <StatusBar style="auto" />
 </ThemeProvider>
       </PaperProvider>
+      </SafeAreaProvider>
     </ApolloProvider>
   );
 }

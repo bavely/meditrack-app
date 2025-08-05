@@ -5,15 +5,15 @@ import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
 import { SafeAreaView } from "react-native";
 import { Colors } from "../../constants/Colors";
 
-import { spacing, sizes } from "../../constants/Theme";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { sizes } from "../../constants/Theme";
 import "../../global.css";
 
 
 export default function TabLayout() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
-  
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Tabs
@@ -25,8 +25,8 @@ export default function TabLayout() {
             borderTopWidth: 1,
             borderTopColor: Colors[colorScheme].tint,
             elevation: 0,
-            height: sizes.lg,
-            paddingBottom: spacing.sm,
+            height: sizes.lg + insets.bottom,
+            paddingBottom: insets.bottom,
           },
           tabBarLabelStyle: {
             fontSize: 12,

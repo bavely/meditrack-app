@@ -12,7 +12,6 @@ import {
 } from "react-native";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
-import Button from "../../components/ui/Button";
 
 import { Colors } from "../../constants/Colors";
 
@@ -71,24 +70,7 @@ export default function AddMedicationScreen() {
       {/* Medication type selector */}
       <View style={styles.formGroup}>
 
-        <TouchableOpacity
-          style={styles.typeSelector}
-          onPress={() => setShowTypeSelector(!showTypeSelector)}
-        >
-          <View style={styles.selectedType}>
-            <View
-              style={[
-                styles.typeIconContainer,
-                { backgroundColor: Colors[colorScheme].icon },
-              ]}
-            >
-              <Pill size={20} color={Colors[colorScheme].foreground} />
-            </View>
-            <Text style={styles.selectedTypeText}>{selectedType.name}</Text>
-          </View>
-          
-          <ChevronDown size={20} color={Colors[colorScheme].tint} />
-        </TouchableOpacity>
+    
 
         
         {showTypeSelector && (
@@ -132,7 +114,7 @@ export default function AddMedicationScreen() {
         onPress={handleAddManuallyPress}
       >
         <Pill size={20} color={Colors.light.tint} />
-        <Text style={styles.addManuallyButtonText}>Add Manually</Text>
+        <Text style={styles.scanButtonText}>Add Manually</Text>
         <ChevronRight size={20} color={Colors.light.tint} />
       </TouchableOpacity>
 
