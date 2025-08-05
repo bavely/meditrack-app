@@ -9,7 +9,9 @@ interface MedicationCardProps {
 }
 
 export default function MedicationCard({ medication, onPress }: MedicationCardProps) {
-  const isLowStock = medication.remainingDoses && medication.remainingDoses <= 7;
+  const isLowStock =
+    typeof medication.remainingDoses === "number" &&
+    medication.remainingDoses <= 7;
   
   return (
     <TouchableOpacity
