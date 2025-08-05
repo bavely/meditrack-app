@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface ProgressCircleProps {
   progress: number; // 0 to 100
@@ -17,6 +18,8 @@ export default function ProgressCircle({
   label,
   showPercentage = true,
 }: ProgressCircleProps) {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   // Ensure progress is between 0 and 100
   const validProgress = Math.min(Math.max(progress, 0), 100);
   
@@ -33,7 +36,7 @@ export default function ProgressCircle({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={Colors.light.tint}
+          stroke={Colors[colorScheme].tint}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -43,7 +46,7 @@ export default function ProgressCircle({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={Colors.light.tint}
+          stroke={Colors[colorScheme].tint}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -63,25 +66,27 @@ export default function ProgressCircle({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  textContainer: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  percentageText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-  },
-  labelText: {
-    fontSize: 14,
-    color: Colors.light.text,
-    marginTop: 4,
-  },
-});
+function createStyles(colorScheme: 'light' | 'dark') {
+  return StyleSheet.create({
+    container: {
+      position: "relative",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    textContainer: {
+      position: "absolute",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    percentageText: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: Colors[colorScheme].text,
+    },
+    labelText: {
+      fontSize: 14,
+      color: Colors[colorScheme].text,
+      marginTop: 4,
+    },
+  });
+}

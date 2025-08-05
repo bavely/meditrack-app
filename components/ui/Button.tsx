@@ -7,7 +7,8 @@ import {
     TouchableOpacity,
     ViewStyle,
 } from "react-native";
-import { Colors } from "../../constants/Colors";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface ButtonProps {
   title: string;
@@ -32,6 +33,8 @@ export default function Button({
   textStyle,
   icon,
 }: ButtonProps) {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   const getContainerStyle = () => {
     const variantStyle = {
       primary: styles.primaryContainer,
@@ -87,7 +90,11 @@ export default function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? "#FFFFFF" : Colors.light.tint}
+          color={
+            variant === "primary"
+              ? Colors[colorScheme].foreground
+              : Colors[colorScheme].tint
+          }
           size="small"
         />
       ) : (
@@ -99,6 +106,7 @@ export default function Button({
     </TouchableOpacity>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

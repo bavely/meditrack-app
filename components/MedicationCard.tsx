@@ -2,6 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { Medication } from "@/types/medication";
 import { AlertCircle, Calendar, Clock, Pill } from "lucide-react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface MedicationCardProps {
   medication: Medication;
@@ -9,10 +10,12 @@ interface MedicationCardProps {
 }
 
 export default function MedicationCard({ medication, onPress }: MedicationCardProps) {
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = createStyles(colorScheme);
   const isLowStock =
     typeof medication.remainingDoses === "number" &&
     medication.remainingDoses <= 7;
-  
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -20,33 +23,33 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
       activeOpacity={0.7}
     >
       <View style={[styles.iconContainer, { backgroundColor: medication.color }]}>
-        <Pill size={24} color="#FFFFFF" />
+        <Pill size={24} color={Colors[colorScheme].foreground} />
       </View>
-      
+
       <View style={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.name}>{medication.name}</Text>
           <Text style={styles.dosage}>{medication.dosage}</Text>
         </View>
-        
+
         <View style={styles.details}>
           <View style={styles.detailItem}>
-            <Clock size={16} color={Colors.light.tint} />
+            <Clock size={16} color={Colors[colorScheme].tint} />
             <Text style={styles.detailText}>{medication.frequency}</Text>
           </View>
-          
+
           {medication.refillDate && (
             <View style={styles.detailItem}>
-              <Calendar size={16} color={Colors.light.tint} />
+              <Calendar size={16} color={Colors[colorScheme].tint} />
               <Text style={styles.detailText}>
                 Refill: {new Date(medication.refillDate).toLocaleDateString()}
               </Text>
             </View>
           )}
-          
+
           {isLowStock && (
             <View style={styles.warningContainer}>
-              <AlertCircle size={16} color={Colors.light.tint} />
+              <AlertCircle size={16} color={Colors[colorScheme].tint} />
               <Text style={styles.warningText}>
                 Low stock: {medication.remainingDoses} doses left
               </Text>
@@ -57,6 +60,7 @@ export default function MedicationCard({ medication, onPress }: MedicationCardPr
     </TouchableOpacity>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

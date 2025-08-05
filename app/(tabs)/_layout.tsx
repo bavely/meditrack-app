@@ -2,7 +2,13 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Tabs, useRouter } from "expo-router";
 import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
+import { SafeAreaView } from "react-native";
 import { Colors } from "../../constants/Colors";
+
+import { spacing, sizes } from "../../constants/Theme";
+
+import "../../global.css";
+
 
 export default function TabLayout() {
   const router = useRouter();
@@ -17,36 +23,37 @@ export default function TabLayout() {
     colorScheme === "light" ? Colors.light.tint : Colors.dark.tint;
   
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: tintcolor,
-        tabBarInactiveTintColor: textcolor,
-        tabBarStyle: {
-          backgroundColor: bgcolor,
-          borderTopWidth: 1,
-          borderTopColor: tintcolor,
-          elevation: 0,
-          height: 60,
-          paddingBottom: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "500",
-        },
-        headerStyle: {
-          backgroundColor: bgcolor,
-          
-        },
-        headerShadowVisible: true,
-        headerTitleStyle: {
-          fontWeight: "700",
-          fontSize: 24,
-        },
-        headerTitleAlign: "center",
-        headerTintColor: textcolor,
-     
-      }}
-    >
+    <SafeAreaView style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: tintcolor,
+          tabBarInactiveTintColor: textcolor,
+          tabBarStyle: {
+            backgroundColor: bgcolor,
+            borderTopWidth: 1,
+            borderTopColor: tintcolor,
+            elevation: 0,
+            height: sizes.lg,
+            paddingBottom: spacing.sm,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "500",
+          },
+          headerStyle: {
+            backgroundColor: bgcolor,
+
+          },
+          headerShadowVisible: true,
+          headerTitleStyle: {
+            fontWeight: "700",
+            fontSize: 24,
+          },
+          headerTitleAlign: "center",
+          headerTintColor: textcolor,
+
+        }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -97,6 +104,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
-    </Tabs>
+      </Tabs>
+    </SafeAreaView>
   );
 }
