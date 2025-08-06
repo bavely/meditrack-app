@@ -68,8 +68,8 @@ export default function ScanMedicationScreen() {
   const processVideo = async (uri: string) => {
     try {
       setIsProcessing(true);
-      const flattened = await unwrapCylindricalLabel(uri);
-      const recognized = await MlkitOcr.detectFromFile(flattened);
+      const flattenedUri = await unwrapCylindricalLabel(uri);
+      const recognized = await MlkitOcr.detectFromUri(flattenedUri);
       const labelText = recognized
         .map((block) => block.text)
         .join("\n")

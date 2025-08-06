@@ -1,40 +1,36 @@
 import * as FileSystem from "expo-file-system";
-const cv = require('opencv.js');
+import { GRAPHQL_API_URL } from "./env";
 
 /**
- * Unwrap a cylindrical label from a recorded video.
- * Returns a path to the flattened image written to cache directory.
+ * Unwrap a cylindrical label from a recorded video by delegating to a backend service.
+ * Returns a path to the flattened image written to the cache directory.
  */
 export async function unwrapCylindricalLabel(videoUri: string): Promise<string> {
   try {
-    const cap = new cv.VideoCapture(videoUri);
-    const frames: any[] = [];
-    let frame = cap.read();
-    while (!frame.empty) {
-      frames.push(frame);
-      frame = cap.read();
-    }
-    if (!frames.length) {
-      throw new Error("No frames found in video");
-    }
+    const formData = new FormData();
+    formData.append("file", {
+      uri: videoUri,
+      name: "label.mp4",
+      type: "video/mp4",
+    } as any);
 
-    const height = frames[0].rows;
-    const width = frames[0].cols;
-    const panorama = new cv.Mat(height, width * frames.length, cv.CV_8UC3);
-
-    frames.forEach((f, idx) => {
-      const slice = f.warpPolar(
-        new cv.Size(width, height),
-        new cv.Point2(width / 2, height / 2),
-        width / 2,
-        cv.WARP_INVERSE_MAP
-      );
-      slice.copyTo(panorama.getRegion(new cv.Rect(idx * width, 0, width, height)));
+    const response = await fetch(`${GRAPHQL_API_URL}/unwrap`, {
+      method: "POST",
+      body: formData,
     });
 
-    const outputPath = `${FileSystem.cacheDirectory}flattened_${Date.now()}.jpg`;
-    cv.imwrite(outputPath, panorama);
-    return outputPath;
+    if (!response.ok) {
+      throw new Error("Unwrap request failed");
+    }
+
+    const { imageUrl } = await response.json();
+    if (!imageUrl) {
+      throw new Error("No imageUrl returned");
+    }
+
+    const localUri = `${FileSystem.cacheDirectory}flattened_${Date.now()}.jpg`;
+    const { uri } = await FileSystem.downloadAsync(imageUrl, localUri);
+    return uri;
   } catch (err) {
     console.error("cylindrical unwrap failed", err);
     throw err;
