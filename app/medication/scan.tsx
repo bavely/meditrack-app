@@ -11,8 +11,9 @@ import {
   Play,
   Square,
   X,
+  Info,
 } from "lucide-react-native";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -26,9 +27,17 @@ import {
 import MlkitOcr from "react-native-mlkit-ocr";
 import Svg, { Circle } from "react-native-svg";
 import Button from "../../components/ui/Button";
+import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
+import { 
+  RotationTracker, 
+  generateScanningFeedback, 
+  analyzeFrameForBottle,
+  type BottleDetectionResult,
+  type ScanningMetrics 
+} from "../../utils/bottleDetection";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -43,9 +52,52 @@ export default function ScanMedicationScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
+  const [showGuidance, setShowGuidance] = useState(true);
+  const [bottleDetection, setBottleDetection] = useState<BottleDetectionResult | null>(null);
+  const [scanningMetrics, setScanningMetrics] = useState<ScanningMetrics>({
+    frameCount: 0,
+    rotationCoverage: 0,
+    qualityScore: 0,
+    estimatedCompleteness: 0,
+  });
 
   const cameraRef = useRef<CameraView | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  const rotationTracker = useRef(new RotationTracker()).current;
+  const frameAnalysisInterval = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Start frame analysis when camera is ready
+    if (permission?.granted && !isProcessing) {
+      startFrameAnalysis();
+    }
+
+    return () => {
+      if (frameAnalysisInterval.current) {
+        clearInterval(frameAnalysisInterval.current);
+      }
+    };
+  }, [permission?.granted, isProcessing]); // Removed startFrameAnalysis dependency to avoid warnings
+
+  const startFrameAnalysis = () => {
+    // Simulate periodic frame analysis for bottle detection
+    frameAnalysisInterval.current = setInterval(async () => {
+      if (cameraRef.current && !isProcessing) {
+        try {
+          // In a real implementation, you would capture actual frames
+          // For now, we'll simulate the analysis
+          const mockDetection = await analyzeFrameForBottle(
+            'mock-frame-uri', 
+            screenWidth, 
+            screenHeight
+          );
+          setBottleDetection(mockDetection);
+        } catch (error) {
+          console.log('Frame analysis error:', error);
+        }
+      }
+    }, 500); // Analyze every 500ms
+  };
 
   const navigateToConfirmation = async (medicationData: any) => {
     try {
@@ -95,9 +147,12 @@ export default function ScanMedicationScreen() {
 
   const startRecording = async () => {
     if (isRecording || isProcessing || !cameraRef.current) return;
+    
     setIsRecording(true);
     setRotationProgress(0);
     progressAnimation.setValue(0);
+    rotationTracker.startTracking();
+    
     const duration = 6000;
     const milestones = [0.25, 0.5, 0.75, 1];
     let milestoneIndex = 0;
@@ -111,6 +166,14 @@ export default function ScanMedicationScreen() {
     const listener = progressAnimation.addListener(({ value }) => {
       const progress = value * 100;
       setRotationProgress(progress);
+      
+      // Update rotation tracking
+      if (bottleDetection?.isBottleDetected) {
+        rotationTracker.addFrame(bottleDetection.position);
+        const metrics = rotationTracker.getScanningMetrics();
+        setScanningMetrics(metrics);
+      }
+      
       if (milestoneIndex < milestones.length && value >= milestones[milestoneIndex]) {
         Haptics.selectionAsync();
         Speech.speak(`${milestones[milestoneIndex] * 100} percent`);
@@ -134,6 +197,7 @@ export default function ScanMedicationScreen() {
     } finally {
       progressAnimation.removeListener(listener);
       setIsRecording(false);
+      rotationTracker.reset();
     }
   };
 
@@ -152,6 +216,15 @@ export default function ScanMedicationScreen() {
   const toggleFlash = () => {
     setFlashEnabled((prev) => !prev);
   };
+
+  const toggleGuidance = () => {
+    setShowGuidance((prev) => !prev);
+  };
+
+  // Generate real-time feedback
+  const feedback = bottleDetection 
+    ? generateScanningFeedback(bottleDetection, scanningMetrics, isRecording)
+    : null;
 
   if (!permission) {
     return <View />;
@@ -182,6 +255,26 @@ export default function ScanMedicationScreen() {
         flash={flashEnabled ? "on" : "off"}
         focusable
       >
+        {/* Enhanced Guidance Overlay */}
+        {showGuidance && (
+          <CylindricalGuidanceOverlay
+            isRecording={isRecording}
+            rotationProgress={rotationProgress}
+            colorScheme={colorScheme}
+          />
+        )}
+
+        {/* Real-time feedback */}
+        {feedback && !isRecording && (
+          <View style={[
+            styles.feedbackContainer,
+            { backgroundColor: getFeedbackColor(feedback.status) }
+          ]}>
+            <Text style={styles.feedbackText}>{feedback.message}</Text>
+          </View>
+        )}
+
+        {/* Progress ring for recording */}
         {isRecording && (
           <View style={styles.progressRingWrapper}>
             <CircularProgress progress={rotationProgress} />
@@ -201,6 +294,10 @@ export default function ScanMedicationScreen() {
           ) : (
             <FlashlightOff size={24} color="#FFFFFF" />
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.guidanceButton} onPress={toggleGuidance}>
+          <Info size={20} color={showGuidance ? "#00FF88" : "#FFFFFF"} />
         </TouchableOpacity>
 
         <View style={styles.controls}>
@@ -229,6 +326,15 @@ export default function ScanMedicationScreen() {
 
           <View style={styles.placeholderButton} />
         </View>
+
+        {/* Quality metrics during recording */}
+        {isRecording && scanningMetrics.qualityScore > 0 && (
+          <View style={styles.metricsContainer}>
+            <Text style={styles.metricsText}>
+              Quality: {scanningMetrics.qualityScore}% | Coverage: {Math.round(scanningMetrics.rotationCoverage)}%
+            </Text>
+          </View>
+        )}
       </CameraView>
 
       {isProcessing && (
@@ -238,11 +344,24 @@ export default function ScanMedicationScreen() {
             <Text style={styles.processingText}>
               Processing captured video...
             </Text>
+            <Text style={styles.processingSubtext}>
+              Unwrapping cylindrical label and extracting text
+            </Text>
           </View>
         </View>
       )}
     </SafeAreaView>
   );
+
+  function getFeedbackColor(status: string): string {
+    switch (status) {
+      case 'excellent': return 'rgba(0, 255, 136, 0.9)';
+      case 'good': return 'rgba(255, 215, 0, 0.9)';
+      case 'poor': return 'rgba(255, 165, 0, 0.9)';
+      case 'error': return 'rgba(255, 69, 58, 0.9)';
+      default: return 'rgba(0, 0, 0, 0.7)';
+    }
+  }
 }
 
 function CircularProgress({ progress }: { progress: number }) {
@@ -295,6 +414,36 @@ function createStyles(colorScheme: "light" | "dark") {
       top: screenHeight * 0.15,
       left: (screenWidth - 80) / 2,
     },
+    feedbackContainer: {
+      position: "absolute",
+      top: 80,
+      left: 20,
+      right: 20,
+      padding: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    feedbackText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    metricsContainer: {
+      position: "absolute",
+      top: 130,
+      left: 20,
+      right: 20,
+      alignItems: 'center',
+    },
+    metricsText: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
     controls: {
       position: "absolute",
       bottom: 40,
@@ -343,6 +492,18 @@ function createStyles(colorScheme: "light" | "dark") {
       right: 20,
       zIndex: 2,
     },
+    guidanceButton: {
+      position: "absolute",
+      top: 40,
+      right: 70,
+      zIndex: 2,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
     processingOverlay: {
       position: "absolute",
       top: 0,
@@ -358,11 +519,21 @@ function createStyles(colorScheme: "light" | "dark") {
       padding: 20,
       borderRadius: 8,
       alignItems: "center",
+      maxWidth: "80%",
     },
     processingText: {
       marginTop: 10,
       color: Colors[colorScheme].foreground,
       textAlign: "center",
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    processingSubtext: {
+      marginTop: 8,
+      color: Colors[colorScheme].foreground,
+      textAlign: "center",
+      fontSize: 12,
+      opacity: 0.7,
     },
     permissionContainer: {
       flex: 1,
