@@ -38,6 +38,10 @@ import {
   type BottleDetectionResult,
   type ScanningMetrics
 } from "../../utils/bottleDetection";
+import {
+  AlternativeScanningManager,
+  cleanupAlternativeScanFiles,
+} from "../../utils/alternativeScanning";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -60,11 +64,13 @@ export default function ScanMedicationScreen() {
     qualityScore: 0,
     estimatedCompleteness: 0,
   });
+  const [showFallbackOptions, setShowFallbackOptions] = useState(false);
 
   const cameraRef = useRef<CameraView | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
+  const alternativeScanner = useRef(new AlternativeScanningManager()).current;
 
   useEffect(() => {
     // Start frame analysis when camera is ready
@@ -121,6 +127,40 @@ export default function ScanMedicationScreen() {
     router.push("/medication/add");
   };
 
+  const handleAlternativeScan = async (
+    method: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto' = 'auto'
+  ) => {
+    let result;
+    try {
+      setIsProcessing(true);
+      setShowFallbackOptions(false);
+      result = await alternativeScanner.performAlternativeScan(method);
+      if (result.success && result.extractedText) {
+        const res = await handleParsedText(result.extractedText);
+        if (
+          res &&
+          res.data &&
+          res.data.parseMedicationLabel &&
+          res.data.parseMedicationLabel.data
+        ) {
+          await navigateToConfirmation(res.data.parseMedicationLabel.data);
+        } else {
+          setShowFallbackOptions(true);
+        }
+      } else {
+        setShowFallbackOptions(true);
+      }
+    } catch (err) {
+      console.error('Alternative scanning error:', err);
+      setShowFallbackOptions(true);
+    } finally {
+      if (result) {
+        await cleanupAlternativeScanFiles(result);
+      }
+      setIsProcessing(false);
+    }
+  };
+
   const processVideo = async (uri: string) => {
     console.log("Processing video URI:", uri);
     try {
@@ -144,7 +184,7 @@ export default function ScanMedicationScreen() {
       }
     } catch (error) {
       console.error("Processing error:", error);
-      handleNavigationError(error);
+      await handleAlternativeScan('auto');
     } finally {
       setIsProcessing(false);
     }
@@ -355,6 +395,44 @@ export default function ScanMedicationScreen() {
           </View>
         </View>
       )}
+
+      {showFallbackOptions && (
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <Text style={styles.processingText}>Scanning failed</Text>
+            <Text style={styles.processingSubtext}>Choose an option</Text>
+            <Button
+              title="Retry Auto Scan"
+              onPress={() => handleAlternativeScan('auto')}
+              style={styles.fallbackButton}
+            />
+            <Button
+              title="Photo Stitching"
+              variant="secondary"
+              onPress={() => handleAlternativeScan('photo_stitching')}
+              style={styles.fallbackButton}
+            />
+            <Button
+              title="Single Photo"
+              variant="secondary"
+              onPress={() => handleAlternativeScan('single_photo')}
+              style={styles.fallbackButton}
+            />
+            <Button
+              title="Manual Guidance"
+              variant="secondary"
+              onPress={() => handleAlternativeScan('manual_guide')}
+              style={styles.fallbackButton}
+            />
+            <Button
+              title="Manual Entry"
+              variant="outline"
+              onPress={() => router.push('/medication/manually')}
+              style={styles.fallbackButton}
+            />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 
@@ -539,6 +617,10 @@ function createStyles(colorScheme: "light" | "dark") {
       textAlign: "center",
       fontSize: 12,
       opacity: 0.7,
+    },
+    fallbackButton: {
+      marginTop: 8,
+      width: '100%',
     },
     permissionContainer: {
       flex: 1,
