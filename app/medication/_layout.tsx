@@ -1,13 +1,19 @@
 import { Stack } from "expo-router";
 
+const screens = [
+  { name: "add", options: { title: "Add Medication" } },
+  { name: "scan", options: { title: "Scan Medication" } },
+  { name: "manually", options: { title: "Add Manually" } },
+  { name: "confirmation", options: { headerShown: false } },
+  { name: "[id]", options: { title: "Medication" } },
+];
+
 export default function MedicationLayout() {
   return (
     <Stack>
-      <Stack.Screen name="add" options={{ title: "Add Medication" }} />
-      <Stack.Screen name="scan" options={{ title: "Scan Medication" }} />
-      <Stack.Screen name="manually" options={{ title: "Add Manually" }} />
-      <Stack.Screen name="confirmation" options={{ headerShown: false }} />
-      <Stack.Screen name="[id]" options={{ title: "Medication" }} />
+      {screens.map((cfg) => (
+        <Stack.Screen key={cfg.name} {...cfg} />
+      ))}
     </Stack>
   );
 }
