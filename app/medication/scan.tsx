@@ -1,11 +1,10 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import Audio from "expo-audio";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import * as Speech from "expo-speech";
-import * as FileSystem from "expo-file-system";
 import {
   Camera,
   Flashlight,
@@ -33,16 +32,16 @@ import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
 import {
+  AlternativeScanningManager,
+  cleanupAlternativeScanFiles,
+} from "../../utils/alternativeScanning";
+import {
   RotationTracker,
   analyzeFrameForBottle,
   generateScanningFeedback,
   type BottleDetectionResult,
   type ScanningMetrics
 } from "../../utils/bottleDetection";
-import {
-  AlternativeScanningManager,
-  cleanupAlternativeScanFiles,
-} from "../../utils/alternativeScanning";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -66,13 +65,12 @@ export default function ScanMedicationScreen() {
     estimatedCompleteness: 0,
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
-
   const cameraRef = useRef<CameraView | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
   const alternativeScanner = useRef(new AlternativeScanningManager()).current;
-
+ const isAnalyzingFrame = useRef(false);
   useEffect(() => {
     // Start frame analysis when camera is ready
     if (permission?.granted && !isProcessing) {
@@ -87,7 +85,7 @@ export default function ScanMedicationScreen() {
   }, [permission?.granted, isProcessing]); // Removed startFrameAnalysis dependency to avoid warnings
 
   useEffect(() => {
-    Audio.requestRecordingPermissionsAsync();
+    // Audio.requestRecordingPermissionsAsync();
   }, []);
 
   const startFrameAnalysis = () => {
