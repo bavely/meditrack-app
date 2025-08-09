@@ -34,7 +34,7 @@ export default function DashboardScreen() {
   useEffect(() => {
     refreshUpcomingDoses();
     calculateAdherenceRate();
-  }, []);
+  }, [refreshUpcomingDoses, calculateAdherenceRate]);
   
   const handleAddMedication = () => {
     router.push("/medication/add");

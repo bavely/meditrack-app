@@ -12,7 +12,7 @@ import { useAuthStore } from "../store/auth-store";
 import { apolloClient } from '../utils/apollo';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, user} = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   
 
   

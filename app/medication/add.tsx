@@ -1,7 +1,8 @@
 import { medicationTypes } from "@/constants/medications";
-import { useMedicationStore } from "@/store/medication-store";
+// TODO: Re-enable when form functionality is implemented
+// import { useMedicationStore } from "@/store/medication-store";
 import { useRouter } from "expo-router";
-import { Camera, ChevronRight, Pill, ChevronDown } from "lucide-react-native";
+import { Camera, ChevronRight, Pill } from "lucide-react-native";
 import { useState } from "react";
 import {
   ScrollView,
@@ -17,43 +18,46 @@ import { Colors } from "../../constants/Colors";
 
 export default function AddMedicationScreen() {
   const router = useRouter();
-  const { addMedication } = useMedicationStore();
+  // TODO: Implement form functionality
+  // const { addMedication } = useMedicationStore();
   const colorScheme = useColorScheme() ?? "light";
   const styles = createStyles(colorScheme);
   
-  const [name, setName] = useState("");
-  const [dosage, setDosage] = useState("");
-  const [frequency, setFrequency] = useState("");
-  const [time, setTime] = useState("09:00");
-  const [instructions, setInstructions] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [selectedType, setSelectedType] = useState(medicationTypes[0]);
+  // TODO: Implement form functionality
+  // const [name, setName] = useState("");
+  // const [dosage, setDosage] = useState("");
+  // const [frequency, setFrequency] = useState("");
+  // const [time, setTime] = useState("09:00");
+  // const [instructions, setInstructions] = useState("");
+  // const [quantity, setQuantity] = useState("");
+  const [selectedType, setSelectedType] = useState(medicationTypes[0]); // Used in UI
   const [showTypeSelector, setShowTypeSelector] = useState(false);
-  const [showFrequencySelector, setShowFrequencySelector] = useState(false);
+  // const [showFrequencySelector, setShowFrequencySelector] = useState(false);
   
-  const handleSave = () => {
-    if (!name || !dosage || !frequency) {
-      // Show validation error
-      return;
-    }
-    
-    const newMedication = {
-      id: Date.now().toString(),
-      name,
-      dosage,
-      frequency,
-      time,
-      instructions,
-      color: Colors[colorScheme].primary,
-      icon: selectedType.icon,
-      quantity: quantity ? parseInt(quantity, 10) : undefined,
-      remainingDoses: quantity ? parseInt(quantity, 10) : undefined,
-      refillDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    };
-    
-    addMedication(newMedication);
-    router.back();
-  };
+  // TODO: Implement save functionality
+  // const handleSave = () => {
+  //   if (!name || !dosage || !frequency) {
+  //     // Show validation error
+  //     return;
+  //   }
+  //   
+  //   const newMedication = {
+  //     id: Date.now().toString(),
+  //     name,
+  //     dosage,
+  //     frequency,
+  //     time,
+  //     instructions,
+  //     color: Colors[colorScheme].primary,
+  //     icon: selectedType.icon,
+  //     quantity: quantity ? parseInt(quantity, 10) : undefined,
+  //     remainingDoses: quantity ? parseInt(quantity, 10) : undefined,
+  //     refillDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+  //   };
+  //   
+  //   addMedication(newMedication);
+  //   router.back();
+  // };
   
   const handleScanPress = () => {
     router.push("/medication/scan");

@@ -25,18 +25,23 @@
 ```bash
 meditrack-app/
 ├── app/                     # Expo Router app directory
-│   ├── (auth)/             # Login, callback screens
-│   ├── (tabs)/             # Dashboard, Scan, Chat, Profile tabs
-│   ├── medication/         # Medication screens
+│   ├── (auth)/             # Login, signup, forgot password screens
+│   ├── (tabs)/             # Dashboard, Assistant, Calendar, Profile tabs
+│   ├── medication/         # Medication management screens
 │   └── _layout.tsx         # Root layout w/ navigation
 ├── components/             # Reusable UI components
-├── context/                # Global providers (e.g., Auth context)
-├── lib/                    # Utility functions (auth0, API, sanitize)
-├── assets/                 # Fonts, images
+├── constants/              # App constants (colors, themes, etc.)
+├── graphql/                # GraphQL queries and schemas
+├── hooks/                  # Custom React hooks
+├── services/               # API service functions
+├── store/                  # Zustand state management stores
+├── types/                  # TypeScript type definitions
+├── utils/                  # Utility functions
+├── assets/                 # Fonts, images, static assets
 ├── global.css              # Tailwind base styles
-├── tailwind.config.ts      # Tailwind 3.x configuration
+├── tailwind.config.js      # Tailwind 3.x configuration
 ├── babel.config.js         # NativeWind plugin
-├── app.config.ts           # Expo config
+├── app.config.js           # Expo config
 └── README.md
 ```
 
