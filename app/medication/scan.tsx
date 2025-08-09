@@ -65,6 +65,7 @@ export default function ScanMedicationScreen() {
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
+  const isAnalyzingFrame = useRef(false);
 
   useEffect(() => {
     // Start frame analysis when camera is ready
@@ -84,20 +85,29 @@ export default function ScanMedicationScreen() {
   }, []);
 
   const startFrameAnalysis = () => {
-    // Simulate periodic frame analysis for bottle detection
     frameAnalysisInterval.current = setInterval(async () => {
-      if (cameraRef.current && !isProcessing) {
+      if (
+        cameraRef.current &&
+        !isProcessing &&
+        !isAnalyzingFrame.current
+      ) {
+        isAnalyzingFrame.current = true;
         try {
-          // In a real implementation, you would capture actual frames
-          // For now, we'll simulate the analysis
-          const mockDetection = await analyzeFrameForBottle(
-            'mock-frame-uri', 
-            screenWidth, 
-            screenHeight
-          );
-          setBottleDetection(mockDetection);
+          const photo = await cameraRef.current.takePictureAsync({
+            skipProcessing: true,
+          });
+          if (photo?.uri) {
+            const detection = await analyzeFrameForBottle(
+              photo.uri,
+              photo.width ?? screenWidth,
+              photo.height ?? screenHeight
+            );
+            setBottleDetection(detection);
+          }
         } catch (error) {
           console.log('Frame analysis error:', error);
+        } finally {
+          isAnalyzingFrame.current = false;
         }
       }
     }, 500); // Analyze every 500ms
