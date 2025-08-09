@@ -5,6 +5,7 @@ import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import * as Speech from "expo-speech";
+import * as FileSystem from "expo-file-system";
 import {
   Camera,
   Flashlight,
@@ -133,9 +134,10 @@ export default function ScanMedicationScreen() {
 
   const processVideo = async (uri: string) => {
     console.log("Processing video URI:", uri);
+    let flattenedUri: string | null = null;
     try {
       setIsProcessing(true);
-      const flattenedUri = await unwrapCylindricalLabel(uri);
+      flattenedUri = await unwrapCylindricalLabel(uri);
       const recognized = await MlkitOcr.detectFromUri(flattenedUri);
       const labelText = recognized
         .map((block) => block.text)
@@ -155,7 +157,16 @@ export default function ScanMedicationScreen() {
     } catch (error) {
       console.error("Processing error:", error);
       handleNavigationError(error);
+      throw error;
     } finally {
+      try {
+        if (flattenedUri) {
+          await FileSystem.deleteAsync(flattenedUri, { idempotent: true });
+        }
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+      } catch (cleanupError) {
+        console.warn("Failed to delete temp files:", cleanupError);
+      }
       setIsProcessing(false);
     }
   };
