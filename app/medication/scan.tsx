@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import Audio from "expo-audio";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -8,12 +9,12 @@ import {
   Camera,
   Flashlight,
   FlashlightOff,
+  Info,
   Play,
   Square,
   X,
-  Info,
 } from "lucide-react-native";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -26,19 +27,18 @@ import {
 } from "react-native";
 import MlkitOcr from "react-native-mlkit-ocr";
 import Svg, { Circle } from "react-native-svg";
-import Button from "../../components/ui/Button";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
+import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
-import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
-import { 
-  RotationTracker, 
-  generateScanningFeedback, 
+import {
+  RotationTracker,
   analyzeFrameForBottle,
+  generateScanningFeedback,
   type BottleDetectionResult,
-  type ScanningMetrics 
+  type ScanningMetrics
 } from "../../utils/bottleDetection";
-
+import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
@@ -64,7 +64,7 @@ export default function ScanMedicationScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const rotationTracker = useRef(new RotationTracker()).current;
-  const frameAnalysisInterval = useRef<NodeJS.Timeout | null>(null);
+  const frameAnalysisInterval = useRef<number | null>(null);
 
   useEffect(() => {
     // Start frame analysis when camera is ready
@@ -78,6 +78,10 @@ export default function ScanMedicationScreen() {
       }
     };
   }, [permission?.granted, isProcessing]); // Removed startFrameAnalysis dependency to avoid warnings
+
+  useEffect(() => {
+    Audio.requestRecordingPermissionsAsync();
+  }, []);
 
   const startFrameAnalysis = () => {
     // Simulate periodic frame analysis for bottle detection
@@ -118,6 +122,7 @@ export default function ScanMedicationScreen() {
   };
 
   const processVideo = async (uri: string) => {
+    console.log("Processing video URI:", uri);
     try {
       setIsProcessing(true);
       const flattenedUri = await unwrapCylindricalLabel(uri);
@@ -254,8 +259,8 @@ export default function ScanMedicationScreen() {
         ref={cameraRef}
         flash={flashEnabled ? "on" : "off"}
         focusable
-      >
-        {/* Enhanced Guidance Overlay */}
+      ></CameraView>
+       <View> {/* Enhanced Guidance Overlay */}
         {showGuidance && (
           <CylindricalGuidanceOverlay
             isRecording={isRecording}
@@ -334,8 +339,8 @@ export default function ScanMedicationScreen() {
               Quality: {scanningMetrics.qualityScore}% | Coverage: {Math.round(scanningMetrics.rotationCoverage)}%
             </Text>
           </View>
-        )}
-      </CameraView>
+        )}</View>
+      
 
       {isProcessing && (
         <View style={styles.processingOverlay}>
