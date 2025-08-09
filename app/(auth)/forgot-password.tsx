@@ -144,7 +144,4 @@ const styles = StyleSheet.create({
    backgroundColor: "#ECEDEE"
   }
 });
-function useState(arg0: boolean): [any, any] {
-  throw new Error("Function not implemented.");
-}
 

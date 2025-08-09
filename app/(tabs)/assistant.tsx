@@ -13,7 +13,6 @@ import {
 import { useColorScheme } from "@/hooks/useColorScheme";
 import ChatMessage from "../../components/ChatMessage";
 import { Colors } from "../../constants/Colors";
-import { spacing } from "../../constants/Theme";
 import { useAIAssistantStore } from "../../store/ai-assistant-store";
 
 export default function AssistantScreen() {

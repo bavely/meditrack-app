@@ -18,15 +18,12 @@ export const Colors = {
     secondary: '#64748b',
     tint: primaryColorLight,
     icon: '#687076',
-    foreground: '#ffffff',
+    foreground: white,
     tabIconDefault: '#687076',
-
     tabIconSelected: primaryColorLight,
     input: '#e2e8f0',
     card: white,
-    foreground: white,
     shadow: black,
-
   },
   dark: {
     text: '#f8fafc',
@@ -38,12 +35,9 @@ export const Colors = {
     icon: '#9BA1A6',
     foreground: '#ffffff',
     tabIconDefault: '#9BA1A6',
-
     tabIconSelected: primaryColorDark,
     input: '#1e293b',
     card: '#1e293b',
-    foreground: black,
     shadow: black,
-
   },
 };
