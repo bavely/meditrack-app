@@ -137,71 +137,63 @@ export class RotationTracker {
   private frames: Array<{
     timestamp: number;
     bottlePosition: { x: number; y: number; width: number; height: number };
+    orientationAngle?: number;
   }> = [];
-  
+
   private startTime: number = 0;
-  private initialPosition: { x: number; y: number } | null = null;
+  private accumulatedAngle: number = 0;
+  private lastAngle: number | null = null;
 
   startTracking(): void {
     this.frames = [];
     this.startTime = Date.now();
-    this.initialPosition = null;
+    this.accumulatedAngle = 0;
+    this.lastAngle = null;
   }
 
-  addFrame(bottlePosition: { x: number; y: number; width: number; height: number }): void {
+  addFrame(
+    bottlePosition: { x: number; y: number; width: number; height: number },
+    orientationAngle?: number
+  ): void {
     const timestamp = Date.now();
-    
-    if (!this.initialPosition) {
-      this.initialPosition = {
-        x: bottlePosition.x + bottlePosition.width / 2,
-        y: bottlePosition.y + bottlePosition.height / 2,
-      };
-    }
 
     this.frames.push({
       timestamp,
       bottlePosition,
+      orientationAngle,
     });
+
+    if (orientationAngle !== undefined) {
+      if (this.lastAngle === null) {
+        this.lastAngle = orientationAngle;
+      } else {
+        let delta = orientationAngle - this.lastAngle;
+        // normalize to -180..180 range
+        delta = ((delta + 180) % 360) - 180;
+        this.accumulatedAngle += Math.abs(delta);
+        this.lastAngle = orientationAngle;
+      }
+    } else if (this.frames.length > 1) {
+      // Fallback: approximate using horizontal movement across frames
+      const previous = this.frames[this.frames.length - 2];
+      const prevCenterX =
+        previous.bottlePosition.x + previous.bottlePosition.width / 2;
+      const currentCenterX =
+        bottlePosition.x + bottlePosition.width / 2;
+      const deltaX = currentCenterX - prevCenterX;
+      const radius = bottlePosition.width || 1;
+      const estimatedAngle = Math.atan2(deltaX, radius) * (180 / Math.PI);
+      this.accumulatedAngle += Math.abs(estimatedAngle);
+    }
   }
 
   getRotationProgress(): number {
-    if (this.frames.length < 2 || !this.initialPosition) {
+    if (this.accumulatedAngle <= 0) {
       return 0;
     }
 
-    // Calculate total camera movement relative to bottle
-    let totalMovement = 0;
-    let maxMovement = 0;
-
-    for (let i = 1; i < this.frames.length; i++) {
-      const current = this.frames[i];
-      const previous = this.frames[i - 1];
-      
-      const currentCenter = {
-        x: current.bottlePosition.x + current.bottlePosition.width / 2,
-        y: current.bottlePosition.y + current.bottlePosition.height / 2,
-      };
-      
-      const previousCenter = {
-        x: previous.bottlePosition.x + previous.bottlePosition.width / 2,
-        y: previous.bottlePosition.y + previous.bottlePosition.height / 2,
-      };
-
-      const movement = Math.sqrt(
-        Math.pow(currentCenter.x - previousCenter.x, 2) +
-        Math.pow(currentCenter.y - previousCenter.y, 2)
-      );
-
-      totalMovement += movement;
-      maxMovement = Math.max(maxMovement, movement);
-    }
-
-    // Estimate rotation progress (360 degrees = 100%)
-    // This is a simplified calculation - in practice, you'd use more sophisticated tracking
-    const estimatedFullRotation = Math.PI * 100; // Simplified estimate
-    const progress = Math.min(100, (totalMovement / estimatedFullRotation) * 100);
-    
-    return progress;
+    // Convert accumulated angle to percentage of a full 360° rotation
+    return Math.min(100, (this.accumulatedAngle / 360) * 100);
   }
 
   getScanningMetrics(): ScanningMetrics {
@@ -253,7 +245,8 @@ export class RotationTracker {
   reset(): void {
     this.frames = [];
     this.startTime = 0;
-    this.initialPosition = null;
+    this.accumulatedAngle = 0;
+    this.lastAngle = null;
   }
 }
 
