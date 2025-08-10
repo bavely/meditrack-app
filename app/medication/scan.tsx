@@ -97,6 +97,7 @@ export default function ScanMedicationScreen() {
   }, []);
 
   const startFrameAnalysis = () => {
+    if (isRecording) return;
     frameAnalysisInterval.current = setInterval(async () => {
       if (
         cameraRef.current &&
@@ -234,10 +235,17 @@ export default function ScanMedicationScreen() {
       }
     }
 
+
     setIsRecording(true);
     setRotationProgress(0);
     progressAnimation.setValue(0);
     rotationTracker.startTracking();
+
+
+    if (frameAnalysisInterval.current) {
+      clearInterval(frameAnalysisInterval.current);
+      frameAnalysisInterval.current = null;
+    }
 
     const duration = 6000;
     const milestones = [0.25, 0.5, 0.75, 1];
@@ -306,6 +314,7 @@ export default function ScanMedicationScreen() {
       setIsRecording(false);
       setRecordingStarted(false);
       rotationTracker.reset();
+      startFrameAnalysis();
     }
   };
 
