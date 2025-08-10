@@ -324,6 +324,18 @@ if (status === 'granted') {
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       console.log("Flattened label URI:", flattenedUri);
+      if (!MlkitOcr || typeof MlkitOcr.detectFromUri !== "function") {
+        const message =
+          "react-native-mlkit-ocr module is not available. Please install and configure it to enable scanning.";
+        console.error(message);
+        Alert.alert(
+          "OCR module unavailable",
+          "Please install and configure react-native-mlkit-ocr to enable scanning."
+        );
+        await handleAlternativeScan("auto");
+        return;
+      }
+
       const recognized = await MlkitOcr.detectFromUri(flattenedUri);
       console.log("OCR recognized text:", recognized);
       const labelText = recognized

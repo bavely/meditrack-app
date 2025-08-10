@@ -8,6 +8,21 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import MlkitOcr from 'react-native-mlkit-ocr';
+import { Alert } from 'react-native';
+
+async function safeDetectFromUri(uri: string) {
+  if (!MlkitOcr || typeof MlkitOcr.detectFromUri !== 'function') {
+    const message =
+      'react-native-mlkit-ocr module is not available. Please install and configure it to enable scanning.';
+    console.error(message);
+    Alert.alert(
+      'OCR module unavailable',
+      'Please install and configure react-native-mlkit-ocr to enable scanning.'
+    );
+    throw new Error(message);
+  }
+  return MlkitOcr.detectFromUri(uri);
+}
 
 export interface AlternativeScanResult {
   success: boolean;
@@ -102,7 +117,7 @@ export class PhotoStitchingScanner {
 
     for (const uri of imageUris) {
       try {
-        const result = await MlkitOcr.detectFromUri(uri);
+        const result = await safeDetectFromUri(uri);
         const textLength = result.map(block => block.text).join('').length;
         
         if (textLength > maxTextLength) {
@@ -131,7 +146,7 @@ export class PhotoStitchingScanner {
       const stitchedImage = await this.stitchImages(images);
       
       // Extract text from stitched image
-      const ocrResult = await MlkitOcr.detectFromUri(stitchedImage);
+      const ocrResult = await safeDetectFromUri(stitchedImage);
       const extractedText = ocrResult
         .map(block => block.text)
         .join('\n')
@@ -221,7 +236,7 @@ export class SinglePhotoScanner {
       const imageUri = await this.captureSinglePhoto();
       const enhancedUri = await this.enhanceImageForOCR(imageUri);
       
-      const ocrResult = await MlkitOcr.detectFromUri(enhancedUri);
+      const ocrResult = await safeDetectFromUri(enhancedUri);
       const extractedText = ocrResult
         .map(block => block.text)
         .join('\n')
@@ -295,7 +310,7 @@ export class ManualGuidanceScanner {
         sectionImages[section.name] = imageUri;
         
         // Extract text from this section
-        const ocrResult = await MlkitOcr.detectFromUri(imageUri);
+        const ocrResult = await safeDetectFromUri(imageUri);
         const sectionText = ocrResult
           .map(block => block.text)
           .join(' ')
