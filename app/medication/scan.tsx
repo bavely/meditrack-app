@@ -37,7 +37,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MlkitOcr from "react-native-mlkit-ocr";
+import ExpoMlkitOcr from "expo-mlkit-ocr";
 import Svg, { Circle } from "react-native-svg";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import Button from "../../components/ui/Button";
@@ -324,12 +324,9 @@ if (status === 'granted') {
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       console.log("Flattened label URI:", flattenedUri);
-      const recognized = await MlkitOcr.detectFromUri(flattenedUri);
+      const recognized = await ExpoMlkitOcr.recognizeText(flattenedUri);
       console.log("OCR recognized text:", recognized);
-      const labelText = recognized
-        .map((block) => block.text)
-        .join("\n")
-        .trim();
+      const labelText = recognized.text.trim();
       const res = await handleParsedText(labelText);
       if (
         res &&

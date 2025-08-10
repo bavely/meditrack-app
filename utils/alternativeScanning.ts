@@ -7,7 +7,7 @@
 
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import MlkitOcr from 'react-native-mlkit-ocr';
+import ExpoMlkitOcr from 'expo-mlkit-ocr';
 
 export interface AlternativeScanResult {
   success: boolean;
@@ -102,9 +102,9 @@ export class PhotoStitchingScanner {
 
     for (const uri of imageUris) {
       try {
-        const result = await MlkitOcr.detectFromUri(uri);
-        const textLength = result.map(block => block.text).join('').length;
-        
+        const result = await ExpoMlkitOcr.recognizeText(uri);
+        const textLength = result.text.length;
+
         if (textLength > maxTextLength) {
           maxTextLength = textLength;
           bestImage = uri;
@@ -131,11 +131,8 @@ export class PhotoStitchingScanner {
       const stitchedImage = await this.stitchImages(images);
       
       // Extract text from stitched image
-      const ocrResult = await MlkitOcr.detectFromUri(stitchedImage);
-      const extractedText = ocrResult
-        .map(block => block.text)
-        .join('\n')
-        .trim();
+      const ocrResult = await ExpoMlkitOcr.recognizeText(stitchedImage);
+      const extractedText = ocrResult.text.trim();
 
       // Calculate confidence based on text quality
       const confidence = this.calculateTextConfidence(extractedText);
@@ -221,11 +218,8 @@ export class SinglePhotoScanner {
       const imageUri = await this.captureSinglePhoto();
       const enhancedUri = await this.enhanceImageForOCR(imageUri);
       
-      const ocrResult = await MlkitOcr.detectFromUri(enhancedUri);
-      const extractedText = ocrResult
-        .map(block => block.text)
-        .join('\n')
-        .trim();
+      const ocrResult = await ExpoMlkitOcr.recognizeText(enhancedUri);
+      const extractedText = ocrResult.text.trim();
 
       const confidence = this.calculateSinglePhotoConfidence(extractedText, ocrResult);
 
@@ -248,12 +242,12 @@ export class SinglePhotoScanner {
     }
   }
 
-  private calculateSinglePhotoConfidence(text: string, ocrResult: any[]): number {
+  private calculateSinglePhotoConfidence(text: string, ocrResult: { blocks: any[] }): number {
     if (!text || text.length < 5) return 0.1;
-    
-    // Consider OCR confidence scores if available
-    const avgConfidence = ocrResult.length > 0 
-      ? ocrResult.reduce((sum, block) => sum + (block.confidence || 0.5), 0) / ocrResult.length
+
+    // Estimate confidence based on number of detected text blocks
+    const avgConfidence = ocrResult.blocks && ocrResult.blocks.length > 0
+      ? 0.5 + Math.min(0.5, ocrResult.blocks.length * 0.05)
       : 0.5;
     
     // Text quality assessment
@@ -295,11 +289,8 @@ export class ManualGuidanceScanner {
         sectionImages[section.name] = imageUri;
         
         // Extract text from this section
-        const ocrResult = await MlkitOcr.detectFromUri(imageUri);
-        const sectionText = ocrResult
-          .map(block => block.text)
-          .join(' ')
-          .trim();
+        const ocrResult = await ExpoMlkitOcr.recognizeText(imageUri);
+        const sectionText = ocrResult.text.trim();
         
         if (sectionText) {
           allText.push(`${section.name.toUpperCase()}: ${sectionText}`);
