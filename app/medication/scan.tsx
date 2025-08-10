@@ -108,6 +108,7 @@ export default function ScanMedicationScreen() {
         try {
           const photo = await cameraRef.current.takePictureAsync({
             skipProcessing: true,
+            shutterSound: false,
           });
           if (photo?.uri) {
             const detection = await analyzeFrameForBottle(
@@ -371,6 +372,7 @@ export default function ScanMedicationScreen() {
         ref={cameraRef}
         flash={flashEnabled ? "on" : "off"}
         focusable
+        animateShutter={false}
       ></CameraView>
        <View> {/* Enhanced Guidance Overlay */}
         {showGuidance && (
