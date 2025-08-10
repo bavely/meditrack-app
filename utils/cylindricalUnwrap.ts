@@ -6,6 +6,7 @@ import { GRAPHQL_API_URL } from "./env";
  * Returns a path to the flattened image written to the cache directory.
  */
 export async function unwrapCylindricalLabel(videoUri: string): Promise<string> {
+  console.log("Unwrapping cylindrical label from video:", videoUri);
   try {
     const formData = new FormData();
     formData.append("file", {

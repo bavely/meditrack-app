@@ -209,7 +209,7 @@ export default function ScanMedicationScreen() {
 
   const startRecording = async () => {
     if (isRecording || isProcessing || !cameraRef.current) return;
-    
+   
     setIsRecording(true);
     setRotationProgress(0);
     progressAnimation.setValue(0);
@@ -228,7 +228,7 @@ export default function ScanMedicationScreen() {
     const listener = progressAnimation.addListener(({ value }) => {
       const progress = value * 100;
       setRotationProgress(progress);
-      
+   
       // Update rotation tracking
       if (bottleDetection?.isBottleDetected) {
         rotationTracker.addFrame(bottleDetection.position);
@@ -249,9 +249,11 @@ export default function ScanMedicationScreen() {
         maxDuration: duration / 1000,
         
       });
+      console.log("Recorded video:", video);
       if (!video?.uri) {
         throw new Error("No video URI returned from recording");
       }
+      console.log("Video URI:==========================================>", video.uri);
       await processVideo(video.uri);
     } catch (error) {
       console.error("Recording error:", error);
