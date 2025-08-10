@@ -37,7 +37,7 @@ The current methodology employs a **video recording + backend unwrapping** strat
 #### Frontend Components:
 - **Camera Interface**: `expo-camera` with CameraView
 - **Recording Control**: 6-second timed recording with progress indicator
-- **OCR Engine**: `react-native-mlkit-ocr` for on-device text recognition
+- **OCR Engine**: `expo-mlkit-ocr` for on-device text recognition
 - **Feedback Systems**: Haptic feedback (`expo-haptics`) and voice announcements (`expo-speech`)
 
 #### Backend Services:
