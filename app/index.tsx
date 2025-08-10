@@ -11,8 +11,6 @@ export default function Index() {
   const colorScheme = useColorScheme();
   const bgcolor =
     colorScheme === "light" ? Colors.light.background : Colors.dark.background;
-  const logintextcolor =
-    colorScheme === "light" ? Colors.light.text : Colors.dark.text;
   return (
     <View style={styles.container}>
       <ImageBackground

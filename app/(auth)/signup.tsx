@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ApolloError } from "@apollo/client";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -28,7 +27,6 @@ import { createUser } from "../../services/userService";
 import { useAuthStore } from "../../store/auth-store";
 export default function SignupScreen() {
   registerTranslation("en", en);
-  const height = useHeaderHeight();
   const colorScheme = useColorScheme();
   const router = useRouter();
   const { signup } = useAuthStore();
@@ -61,7 +59,7 @@ export default function SignupScreen() {
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [currentStep]);
+  }, [currentStep, progressAnim]);
 
   const handleNext = () => {
     if (currentStep === 0 && (!name.trim() || !email.trim())) {

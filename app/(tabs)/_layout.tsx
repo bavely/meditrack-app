@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.tsx
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs } from "expo-router";
 import { Calendar, Home, MessageSquare, User } from "lucide-react-native";
 import { SafeAreaView } from "react-native";
 import { Colors } from "../../constants/Colors";
@@ -11,7 +11,6 @@ import "../../global.css";
 
 
 export default function TabLayout() {
-  const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   return (

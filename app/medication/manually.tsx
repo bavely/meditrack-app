@@ -20,14 +20,15 @@ const Manually = () => {
   
   const [name, setName] = useState("");
   const [dosage, setDosage] = useState("");
-  const [frequency, setFrequency] = useState("");
+  const [frequency] = useState("");
   const [time, setTime] = useState("09:00");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [instructions, setInstructions] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [selectedType, setSelectedType] = useState(medicationTypes[0]);
-  const [showTypeSelector, setShowTypeSelector] = useState(false);
-  const [showFrequencySelector, setShowFrequencySelector] = useState(false);
+  const [selectedType] = useState(medicationTypes[0]);
+  // TODO: Implement type and frequency selectors
+  const [showTypeSelector, setShowTypeSelector] = useState(false); // Used in UI
+  // const [showFrequencySelector, setShowFrequencySelector] = useState(false);
   
   const handleSave = () => {
     if (!name || !dosage || !frequency) {

@@ -101,7 +101,7 @@ export const useAIAssistantStore = create<AIAssistantState>()(
             role: "assistant",
             content: response,
           });
-        } catch (error) {
+        } catch {
           //consoleerror("Error asking question:", error);
           addMessage({
             role: "assistant",

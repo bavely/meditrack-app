@@ -12,10 +12,8 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts",
-    "env.d.ts",   // ✅ Include your custom file here
+    "env.d.ts",
     "app",
-    "components",
-    "lib",
-    "context"
+    "components"
   ]
 }
