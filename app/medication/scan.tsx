@@ -19,11 +19,12 @@ import {
   Square,
   X,
 } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  AppState,
   Dimensions,
   SafeAreaView,
   StyleSheet,
@@ -49,6 +50,7 @@ import {
   type ScanningMetrics
 } from "../../utils/bottleDetection";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
@@ -60,6 +62,7 @@ export default function ScanMedicationScreen() {
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const [recordingStarted, setRecordingStarted] = useState(false);
   const [canStopRecording, setCanStopRecording] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
@@ -74,60 +77,116 @@ export default function ScanMedicationScreen() {
     estimatedCompleteness: 0,
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
+  
+  // Refs
   const cameraRef = useRef<CameraView | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
   const alternativeScanner = useRef(new AlternativeScanningManager()).current;
   const isAnalyzingFrame = useRef(false);
-  const recordingPromise = useRef<Promise<any> | null>(null);
+  const recordingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isComponentMounted = useRef(true);
+  
+  // Recording state management
+  const [recordingState, setRecordingState] = useState<{
+    isActive: boolean;
+    startTime: number | null;
+    promise: Promise<any> | null;
+  }>({
+    isActive: false,
+    startTime: null,
+    promise: null,
+  });
+
+  // Cleanup on unmount
   useEffect(() => {
-    // Start frame analysis when camera is ready
-    if (permission?.granted && !isProcessing) {
+    return () => {
+      isComponentMounted.current = false;
+      if (frameAnalysisInterval.current) {
+        clearInterval(frameAnalysisInterval.current);
+      }
+      if (recordingTimeout.current) {
+        clearTimeout(recordingTimeout.current);
+      }
+      // Stop any ongoing recording
+      if (recordingState.isActive && cameraRef.current) {
+        try {
+          // @ts-ignore
+          cameraRef.current.stopRecording();
+        } catch (error) {
+          console.log('Cleanup recording stop error:', error);
+        }
+      }
+    };
+  }, []);
+
+  // Handle app state changes
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState !== 'active' && recordingState.isActive) {
+        // App is going to background, stop recording
+        stopRecording();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [recordingState.isActive]);
+
+  // Start frame analysis when camera is ready
+  useEffect(() => {
+    if (isCameraReady && permission?.granted && !isProcessing && !isRecording) {
       startFrameAnalysis();
     }
 
     return () => {
       if (frameAnalysisInterval.current) {
         clearInterval(frameAnalysisInterval.current);
+        frameAnalysisInterval.current = null;
       }
     };
-  }, [permission?.granted, isProcessing]); // Removed startFrameAnalysis dependency to avoid warnings
+  }, [isCameraReady, permission?.granted, isProcessing, isRecording]);
 
-  useEffect(() => {
-    // Audio.requestRecordingPermissionsAsync();
-  }, []);
-
-  const startFrameAnalysis = () => {
-    if (isRecording) return;
+  const startFrameAnalysis = useCallback(() => {
+    if (isRecording || frameAnalysisInterval.current) return;
+    
     frameAnalysisInterval.current = setInterval(async () => {
       if (
         cameraRef.current &&
+        isCameraReady &&
         !isProcessing &&
-        !isAnalyzingFrame.current
+        !isAnalyzingFrame.current &&
+        !isRecording &&
+        isComponentMounted.current
       ) {
         isAnalyzingFrame.current = true;
         try {
           const photo = await cameraRef.current.takePictureAsync({
             skipProcessing: true,
             shutterSound: false,
+            quality: 0.1, // Low quality for analysis
           });
-          if (photo?.uri) {
+          if (photo?.uri && isComponentMounted.current) {
             const detection = await analyzeFrameForBottle(
               photo.uri,
               photo.width ?? screenWidth,
               photo.height ?? screenHeight
             );
-            setBottleDetection(detection);
+            if (isComponentMounted.current) {
+              setBottleDetection(detection);
+            }
+            // Clean up analysis image
+            FileSystem.deleteAsync(photo.uri, { idempotent: true }).catch(() => {});
           }
         } catch (error) {
-          console.log('Frame analysis error:', error);
+          // Silently handle analysis errors
         } finally {
           isAnalyzingFrame.current = false;
         }
       }
-    }, 500); // Analyze every 500ms
-  };
+    }, 1000); // Reduced frequency to 1 second
+  }, [isCameraReady, isProcessing, isRecording]);
 
   const navigateToConfirmation = async (medicationData: any) => {
     try {
@@ -185,6 +244,13 @@ export default function ScanMedicationScreen() {
     console.log("Processing video URI:", uri);
     let flattenedUri: string | null = null;
     try {
+      // Check if file exists and has size
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists || fileInfo.size === 0) {
+        throw new Error("Video file is empty or doesn't exist");
+      }
+      
+      console.log("Video file info:", fileInfo);
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       const recognized = await MlkitOcr.detectFromUri(flattenedUri);
@@ -220,8 +286,13 @@ export default function ScanMedicationScreen() {
   };
 
   const startRecording = async () => {
-    if (isRecording || isProcessing || !cameraRef.current) return;
+    // Prevent multiple recording attempts
+    if (isRecording || isProcessing || !cameraRef.current || !isCameraReady || recordingState.isActive) {
+      console.log('Recording blocked:', { isRecording, isProcessing, isCameraReady, recordingState });
+      return;
+    }
 
+    // Check permissions
     if (!permission?.granted) {
       const camStatus = await requestPermission();
       if (!camStatus.granted) {
@@ -238,124 +309,210 @@ export default function ScanMedicationScreen() {
       }
     }
 
+    try {
+      console.log('Starting recording...');
+      
+      // Set recording state
+      setIsRecording(true);
+      setRotationProgress(0);
+      progressAnimation.setValue(0);
+      rotationTracker.startTracking();
+      setRecordingStarted(false);
+      setCanStopRecording(false);
 
-    setIsRecording(true);
-    setRotationProgress(0);
-    progressAnimation.setValue(0);
-    rotationTracker.startTracking();
-    setRecordingStarted(false);
-    setCanStopRecording(false);
-    recordingPromise.current = null;
-
-    if (frameAnalysisInterval.current) {
-      clearInterval(frameAnalysisInterval.current);
-      frameAnalysisInterval.current = null;
-    }
-
-    const duration = 6000;
-    const milestones = [0.25, 0.5, 0.75, 1];
-    let milestoneIndex = 0;
-
-    Animated.timing(progressAnimation, {
-      toValue: 1,
-      duration,
-      useNativeDriver: false,
-    }).start();
-
-    const listener = progressAnimation.addListener(({ value }) => {
-      const progress = value * 100;
-      setRotationProgress(progress);
-
-      // Update rotation tracking
-      if (bottleDetection?.isBottleDetected) {
-        rotationTracker.addFrame(bottleDetection.position);
-        const metrics = rotationTracker.getScanningMetrics();
-        setScanningMetrics(metrics);
+      // Stop frame analysis
+      if (frameAnalysisInterval.current) {
+        clearInterval(frameAnalysisInterval.current);
+        frameAnalysisInterval.current = null;
       }
 
-      if (milestoneIndex < milestones.length && value >= milestones[milestoneIndex]) {
-        Haptics.selectionAsync();
-        Speech.speak(`${milestones[milestoneIndex] * 100} percent`);
-        milestoneIndex++;
-      }
-    });
+      const duration = 8000; // Increased to 8 seconds for better data capture
+      const milestones = [0.25, 0.5, 0.75, 1];
+      let milestoneIndex = 0;
 
-    const recordingOptions = {
-      maxDuration: duration / 1000,
-      quality: "1080p" as const,
-      fileType: "mp4" as const,
-    };
+      // Start progress animation
+      Animated.timing(progressAnimation, {
+        toValue: 1,
+        duration,
+        useNativeDriver: false,
+      }).start();
 
-    let video: any = null;
-    const maxAttempts = 2;
-    let attempt = 0;
+      const listener = progressAnimation.addListener(({ value }) => {
+        const progress = value * 100;
+        setRotationProgress(progress);
 
-    while (attempt < maxAttempts && !video) {
+        // Update rotation tracking
+        if (bottleDetection?.isBottleDetected) {
+          rotationTracker.addFrame(bottleDetection.position);
+          const metrics = rotationTracker.getScanningMetrics();
+          setScanningMetrics(metrics);
+        }
+
+        if (milestoneIndex < milestones.length && value >= milestones[milestoneIndex]) {
+          Haptics.selectionAsync();
+          Speech.speak(`${milestones[milestoneIndex] * 100} percent`);
+          milestoneIndex++;
+        }
+      });
+
+      // Enhanced recording options
+      const recordingOptions = {
+        maxDuration: duration / 1000, // Convert to seconds
+        quality: "720p" as const, // Use 720p instead of 1080p for better compatibility
+        fileType: "mp4" as const,
+        videoBitrate: 5000000, // 5 Mbps
+        fps: 30,
+      };
+
+      console.log('Recording options:', recordingOptions);
+
+      let video: any = null;
+      const startTime = Date.now();
+      
+      // Update recording state
+      setRecordingState({
+        isActive: true,
+        startTime,
+        promise: null,
+      });
+
       try {
-        recordingPromise.current = cameraRef.current.recordAsync(recordingOptions);
+        // Start recording with timeout protection
+        const recordingPromise =  cameraRef.current.recordAsync(recordingOptions);
+        console.log('Recording started, waiting for promise...', recordingPromise);
+        setRecordingState(prev => ({
+          ...prev,
+          promise: recordingPromise,
+        }));
+
         setRecordingStarted(true);
-        setTimeout(() => setCanStopRecording(true), 100);
-        video = await recordingPromise.current;
+        console.log('Recording started successfully', isComponentMounted.current);
+        // Allow stopping after 1 second
+        setTimeout(() => {
+          if (isComponentMounted.current) {
+            setCanStopRecording(true);
+          }
+        }, 1000);
+
+        // Auto-stop recording after duration + buffer
+        recordingTimeout.current = setTimeout(() => {
+          if (recordingState.isActive && cameraRef.current) {
+            console.log('Auto-stopping recording due to timeout');
+            try {
+              // @ts-ignore
+              cameraRef.current.stopRecording();
+            } catch (error) {
+              console.log('Auto-stop error:', error);
+            }
+          }
+        }, duration + 1000);
+
+        console.log('Waiting for recording to complete...');
+        video = await recordingPromise;
+        console.log('Recording completed:', video);
+        const recordingDuration = Date.now() - startTime;
+        console.log('Recording completed:', { video, recordingDuration });
+
       } catch (error) {
-        attempt++;
-        recordingPromise.current = null;
-        setRecordingStarted(false);
-        setCanStopRecording(false);
-        console.error("Recording error:", error);
-        if (attempt < maxAttempts) {
-          Alert.alert("Recording failed", "Retrying...");
+        console.error("Recording failed:", error);
+        
+        // Check if it's a user cancellation vs actual error
+        const recordingDuration = Date.now() - startTime;
+        if (recordingDuration < 500) {
+          throw new Error("Recording failed immediately - please try again");
         } else {
-          Alert.alert("Recording failed", "Please try again.");
-          handleNavigationError(error);
+          throw error;
         }
       }
-    }
 
-    try {
-      if (video?.uri) {
-        console.log("Recorded video:", video);
-        console.log("Video URI:==========================================>", video.uri);
+      // Process the recorded video
+      if (video?.uri && isComponentMounted.current) {
+        console.log("Processing recorded video:", video.uri);
         await processVideo(video.uri);
+      } else {
+        throw new Error("No video was recorded");
       }
-    } finally {
+
+      // Cleanup listener
       progressAnimation.removeListener(listener);
+
+    } catch (error) {
+      console.error("Recording error:", error);
+      Alert.alert(
+        "Recording Failed", 
+        error instanceof Error ? error.message : "Please try again or use alternative scanning methods",
+        [
+          { text: "Try Again", onPress: () => {} },
+          { text: "Alternative Methods", onPress: () => setShowFallbackOptions(true) }
+        ]
+      );
+    } finally {
+      // Reset all recording states
       setIsRecording(false);
       setRecordingStarted(false);
       setCanStopRecording(false);
-      recordingPromise.current = null;
+      setRecordingState({
+        isActive: false,
+        startTime: null,
+        promise: null,
+      });
+      
+      if (recordingTimeout.current) {
+        clearTimeout(recordingTimeout.current);
+        recordingTimeout.current = null;
+      }
+      
       rotationTracker.reset();
-      startFrameAnalysis();
+      
+      // Restart frame analysis
+      if (isComponentMounted.current && isCameraReady) {
+        setTimeout(() => {
+          startFrameAnalysis();
+        }, 1000);
+      }
     }
   };
 
-  const stopRecording = () => {
-    if (
-      !cameraRef.current ||
-      !recordingStarted ||
-      !canStopRecording ||
-      !recordingPromise.current
-    )
+  const stopRecording = useCallback(() => {
+    if (!recordingState.isActive || !cameraRef.current || !canStopRecording) {
+      console.log('Stop recording blocked:', { 
+        isActive: recordingState.isActive, 
+        canStop: canStopRecording 
+      });
       return;
+    }
+
+    console.log('Stopping recording...');
     setCanStopRecording(false);
-    setTimeout(() => {
+    
+    try {
       // @ts-ignore: stopRecording may not be typed on cameraRef
-      cameraRef.current?.stopRecording();
-    }, 50);
-  };
+      cameraRef.current.stopRecording();
+    } catch (error) {
+      console.log('Stop recording error:', error);
+    }
+  }, [recordingState.isActive, canStopRecording]);
 
   const toggleCameraFacing = () => {
+    if (isRecording || isProcessing) return;
     setFacing((current: CameraType) =>
       current === "back" ? "front" : "back"
     );
   };
 
   const toggleFlash = () => {
+    if (isRecording || isProcessing) return;
     setFlashEnabled((prev) => !prev);
   };
 
   const toggleGuidance = () => {
     setShowGuidance((prev) => !prev);
   };
+
+  const onCameraReady = useCallback(() => {
+    console.log('Camera is ready');
+    setIsCameraReady(true);
+  }, []);
 
   // Generate real-time feedback
   const feedback = bottleDetection 
@@ -391,91 +548,108 @@ export default function ScanMedicationScreen() {
         flash={flashEnabled ? "on" : "off"}
         focusable
         animateShutter={false}
-      ></CameraView>
-      <View>{/* Enhanced Guidance Overlay */}
-        {showGuidance && (
-          <CylindricalGuidanceOverlay
-            isRecording={isRecording}
-            rotationProgress={rotationProgress}
-            colorScheme={colorScheme}
-          />
-        )}
+        onCameraReady={onCameraReady}
+      />
+      
+      {/* Enhanced Guidance Overlay */}
+      {showGuidance && (
+        <CylindricalGuidanceOverlay
+          isRecording={isRecording}
+          rotationProgress={rotationProgress}
+          colorScheme={colorScheme}
+        />
+      )}
 
-        {/* Real-time feedback */}
-        {feedback && !isRecording && (
-          <View style={[
-            styles.feedbackContainer,
-            { backgroundColor: getFeedbackColor(feedback.status) }
-          ]}>
-            <Text style={styles.feedbackText}>{feedback.message}</Text>
-          </View>
-        )}
+      {/* Real-time feedback */}
+      {feedback && !isRecording && isCameraReady && (
+        <View style={[
+          styles.feedbackContainer,
+          { backgroundColor: getFeedbackColor(feedback.status) }
+        ]}>
+          <Text style={styles.feedbackText}>{feedback.message}</Text>
+        </View>
+      )}
 
-        {/* Progress ring for recording */}
-        {isRecording && (
-          <View style={styles.progressRingWrapper}>
-            <CircularProgress progress={rotationProgress} />
-          </View>
-        )}
+      {/* Progress ring for recording */}
+      {isRecording && (
+        <View style={styles.progressRingWrapper}>
+          <CircularProgress progress={rotationProgress} />
+        </View>
+      )}
 
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => router.back()}
+      >
+        <X size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.flashButton} 
+        onPress={toggleFlash}
+        disabled={isRecording || isProcessing}
+      >
+        {flashEnabled ? (
+          <Flashlight size={24} color="#FFD700" />
+        ) : (
+          <FlashlightOff size={24} color="#FFFFFF" />
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.guidanceButton} onPress={toggleGuidance}>
+        <Info size={20} color={showGuidance ? "#00FF88" : "#FFFFFF"} />
+      </TouchableOpacity>
+
+      {/* Camera readiness indicator */}
+      {!isCameraReady && (
+        <View style={styles.cameraLoadingContainer}>
+          <ActivityIndicator color="#FFFFFF" size="small" />
+          <Text style={styles.cameraLoadingText}>Initializing camera...</Text>
+        </View>
+      )}
+
+      <View style={styles.controls}>
         <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
+          style={[
+            styles.flipButton,
+            (isRecording || isProcessing) && styles.disabledButton
+          ]}
+          onPress={toggleCameraFacing}
+          disabled={isRecording || isProcessing}
         >
-          <X size={24} color="#FFFFFF" />
+          <Camera size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.flashButton} onPress={toggleFlash}>
-          {flashEnabled ? (
-            <Flashlight size={24} color="#FFD700" />
+        <TouchableOpacity
+          style={[
+            styles.captureButton,
+            (!isCameraReady || isProcessing || (isRecording && !canStopRecording)) &&
+              styles.disabledButton,
+            isRecording && styles.stopButton,
+          ]}
+          onPress={isRecording ? stopRecording : startRecording}
+          disabled={
+            !isCameraReady || isProcessing || (isRecording && !canStopRecording)
+          }
+        >
+          {isRecording ? (
+            <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
           ) : (
-            <FlashlightOff size={24} color="#FFFFFF" />
+            <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.guidanceButton} onPress={toggleGuidance}>
-          <Info size={20} color={showGuidance ? "#00FF88" : "#FFFFFF"} />
-        </TouchableOpacity>
+        <View style={styles.placeholderButton} />
+      </View>
 
-        <View style={styles.controls}>
-          <TouchableOpacity
-            style={styles.flipButton}
-            onPress={toggleCameraFacing}
-          >
-            <Camera size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.captureButton,
-              (isProcessing || (isRecording && !canStopRecording)) &&
-                styles.disabledButton,
-              isRecording && styles.stopButton,
-            ]}
-            onPress={isRecording ? stopRecording : startRecording}
-            disabled={
-              isProcessing || (isRecording && !canStopRecording)
-            }
-          >
-            {isRecording ? (
-              <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
-            ) : (
-              <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.placeholderButton} />
+      {/* Quality metrics during recording */}
+      {isRecording && scanningMetrics.qualityScore > 0 && (
+        <View style={styles.metricsContainer}>
+          <Text style={styles.metricsText}>
+            Quality: {scanningMetrics.qualityScore}% | Coverage: {Math.round(scanningMetrics.rotationCoverage)}%
+          </Text>
         </View>
-
-        {/* Quality metrics during recording */}
-        {isRecording && scanningMetrics.qualityScore > 0 && (
-          <View style={styles.metricsContainer}>
-            <Text style={styles.metricsText}>
-              Quality: {scanningMetrics.qualityScore}% | Coverage: {Math.round(scanningMetrics.rotationCoverage)}%
-            </Text>
-          </View>
-        )}</View>
-      
+      )}
 
       {isProcessing && (
         <View style={styles.processingOverlay}>
@@ -621,6 +795,22 @@ function createStyles(colorScheme: "light" | "dark") {
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 6,
+    },
+    cameraLoadingContainer: {
+      position: "absolute",
+      top: '45%',
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: 20,
+      borderRadius: 8,
+      margin: 20,
+    },
+    cameraLoadingText: {
+      color: '#FFFFFF',
+      marginTop: 10,
+      fontSize: 14,
     },
     controls: {
       position: "absolute",
