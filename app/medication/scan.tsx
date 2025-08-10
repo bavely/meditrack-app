@@ -8,6 +8,7 @@ import {
 } from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
+import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from "expo-router";
 import * as Speech from "expo-speech";
 import {
@@ -50,7 +51,6 @@ import {
   type ScanningMetrics
 } from "../../utils/bottleDetection";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
-
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
@@ -241,6 +241,12 @@ export default function ScanMedicationScreen() {
   };
 
   const processVideo = async (uri: string) => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+if (status === 'granted') {
+  const asset = await MediaLibrary.createAssetAsync(uri);
+  await MediaLibrary.createAlbumAsync('Meditrack', asset, false);
+  console.log('Saved to gallery');
+}
     console.log("Processing video URI:", uri);
     let flattenedUri: string | null = null;
     try {
@@ -253,7 +259,9 @@ export default function ScanMedicationScreen() {
       console.log("Video file info:", fileInfo);
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
+      console.log("Flattened label URI:", flattenedUri);
       const recognized = await MlkitOcr.detectFromUri(flattenedUri);
+      console.log("OCR recognized text:", recognized);
       const labelText = recognized
         .map((block) => block.text)
         .join("\n")

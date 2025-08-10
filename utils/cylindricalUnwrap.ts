@@ -1,5 +1,4 @@
 import * as FileSystem from "expo-file-system";
-import { GRAPHQL_API_URL } from "./env";
 
 /**
  * Unwrap a cylindrical label from a recorded video by delegating to a backend service.
@@ -15,7 +14,7 @@ export async function unwrapCylindricalLabel(videoUri: string): Promise<string> 
       type: "video/mp4",
     } as any);
 
-    const response = await fetch(`${GRAPHQL_API_URL}/unwrap`, {
+    const response = await fetch(`http://192.168.50.5:5050/unwrap`, {
       method: "POST",
       body: formData,
     });
@@ -31,6 +30,7 @@ export async function unwrapCylindricalLabel(videoUri: string): Promise<string> 
 
     const localUri = `${FileSystem.cacheDirectory}flattened_${Date.now()}.jpg`;
     const { uri } = await FileSystem.downloadAsync(imageUrl, localUri);
+    console.log("Cylindrical label unwrapped to:", uri);
     return uri;
   } catch (err) {
     console.error("cylindrical unwrap failed", err);
