@@ -1,6 +1,11 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import {
+  CameraType,
+  CameraView,
+  useCameraPermissions,
+  useMicrophonePermissions,
+} from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -17,6 +22,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   SafeAreaView,
@@ -51,8 +57,10 @@ export default function ScanMedicationScreen() {
   const router = useRouter();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingStarted, setRecordingStarted] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
@@ -209,12 +217,28 @@ export default function ScanMedicationScreen() {
 
   const startRecording = async () => {
     if (isRecording || isProcessing || !cameraRef.current) return;
-   
+
+    if (!permission?.granted) {
+      const camStatus = await requestPermission();
+      if (!camStatus.granted) {
+        Alert.alert("Camera permission required");
+        return;
+      }
+    }
+
+    if (!micPermission?.granted) {
+      const micStatus = await requestMicPermission();
+      if (!micStatus.granted) {
+        Alert.alert("Microphone permission required");
+        return;
+      }
+    }
+
     setIsRecording(true);
     setRotationProgress(0);
     progressAnimation.setValue(0);
     rotationTracker.startTracking();
-    
+
     const duration = 6000;
     const milestones = [0.25, 0.5, 0.75, 1];
     let milestoneIndex = 0;
@@ -228,14 +252,14 @@ export default function ScanMedicationScreen() {
     const listener = progressAnimation.addListener(({ value }) => {
       const progress = value * 100;
       setRotationProgress(progress);
-   
+
       // Update rotation tracking
       if (bottleDetection?.isBottleDetected) {
         rotationTracker.addFrame(bottleDetection.position);
         const metrics = rotationTracker.getScanningMetrics();
         setScanningMetrics(metrics);
       }
-      
+
       if (milestoneIndex < milestones.length && value >= milestones[milestoneIndex]) {
         Haptics.selectionAsync();
         Speech.speak(`${milestones[milestoneIndex] * 100} percent`);
@@ -243,30 +267,50 @@ export default function ScanMedicationScreen() {
       }
     });
 
-    try {
-       // @ts-ignore: stopRecording may not be typed on cameraRef
-      const video = await cameraRef.current.recordAsync({
-        maxDuration: duration / 1000,
-        
-      });
-      console.log("Recorded video:", video);
-      if (!video?.uri) {
-        throw new Error("No video URI returned from recording");
+    const recordingOptions = {
+      maxDuration: duration / 1000,
+      quality: "1080p" as const,
+      fileType: "mp4" as const,
+    };
+
+    let video: any = null;
+    const maxAttempts = 2;
+    let attempt = 0;
+
+    while (attempt < maxAttempts && !video) {
+      try {
+        const recordingPromise = cameraRef.current.recordAsync(recordingOptions);
+        setRecordingStarted(true);
+        video = await recordingPromise;
+      } catch (error) {
+        attempt++;
+        setRecordingStarted(false);
+        console.error("Recording error:", error);
+        if (attempt < maxAttempts) {
+          Alert.alert("Recording failed", "Retrying...");
+        } else {
+          Alert.alert("Recording failed", "Please try again.");
+          handleNavigationError(error);
+        }
       }
-      console.log("Video URI:==========================================>", video.uri);
-      await processVideo(video.uri);
-    } catch (error) {
-      console.error("Recording error:", error);
-      handleNavigationError(error);
+    }
+
+    try {
+      if (video?.uri) {
+        console.log("Recorded video:", video);
+        console.log("Video URI:==========================================>", video.uri);
+        await processVideo(video.uri);
+      }
     } finally {
       progressAnimation.removeListener(listener);
       setIsRecording(false);
+      setRecordingStarted(false);
       rotationTracker.reset();
     }
   };
 
   const stopRecording = () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || !recordingStarted) return;
     // @ts-ignore: stopRecording may not be typed on cameraRef
     cameraRef.current.stopRecording();
   };
