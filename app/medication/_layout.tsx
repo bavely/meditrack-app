@@ -11,14 +11,9 @@ const screens = [
 
 
 export default function MedicationLayout() {
-
   return (
-    <Stack>
-
-      {screens.map((cfg) => (
+    <Stack>{screens.map((cfg) => (
         <Stack.Screen key={cfg.name} {...cfg} />
-      ))}
-
-    </Stack>
+      ))}</Stack>
   );
 }
