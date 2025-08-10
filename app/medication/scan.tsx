@@ -544,6 +544,7 @@ export default function ScanMedicationScreen() {
       <CameraView
         style={styles.camera}
         facing={facing}
+        mode="video"
         ref={cameraRef}
         flash={flashEnabled ? "on" : "off"}
         focusable
