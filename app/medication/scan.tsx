@@ -372,7 +372,7 @@ export default function ScanMedicationScreen() {
         flash={flashEnabled ? "on" : "off"}
         focusable
       ></CameraView>
-       <View> {/* Enhanced Guidance Overlay */}
+      <View>{/* Enhanced Guidance Overlay */}
         {showGuidance && (
           <CylindricalGuidanceOverlay
             isRecording={isRecording}
