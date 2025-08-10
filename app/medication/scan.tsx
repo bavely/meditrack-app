@@ -6,15 +6,15 @@ import {
   useCameraPermissions,
   useMicrophonePermissions,
 } from "expo-camera";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from "expo-router";
 import * as Speech from "expo-speech";
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 import {
   Camera,
   Flashlight,
@@ -622,7 +622,6 @@ if (status === 'granted') {
         focusable
         animateShutter={false}
         onCameraReady={onCameraReady}
-        mode="video"
       />
       
       {/* Enhanced Guidance Overlay */}
