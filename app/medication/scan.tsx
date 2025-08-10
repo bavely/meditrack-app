@@ -392,7 +392,7 @@ export default function ScanMedicationScreen() {
         focusable
         animateShutter={false}
       ></CameraView>
-       <View> {/* Enhanced Guidance Overlay */}
+      <View>{/* Enhanced Guidance Overlay */}
         {showGuidance && (
           <CylindricalGuidanceOverlay
             isRecording={isRecording}
