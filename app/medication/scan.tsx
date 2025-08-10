@@ -61,6 +61,7 @@ export default function ScanMedicationScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStarted, setRecordingStarted] = useState(false);
+  const [canStopRecording, setCanStopRecording] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
@@ -78,7 +79,8 @@ export default function ScanMedicationScreen() {
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
   const alternativeScanner = useRef(new AlternativeScanningManager()).current;
- const isAnalyzingFrame = useRef(false);
+  const isAnalyzingFrame = useRef(false);
+  const recordingPromise = useRef<Promise<any> | null>(null);
   useEffect(() => {
     // Start frame analysis when camera is ready
     if (permission?.granted && !isProcessing) {
@@ -241,7 +243,9 @@ export default function ScanMedicationScreen() {
     setRotationProgress(0);
     progressAnimation.setValue(0);
     rotationTracker.startTracking();
-
+    setRecordingStarted(false);
+    setCanStopRecording(false);
+    recordingPromise.current = null;
 
     if (frameAnalysisInterval.current) {
       clearInterval(frameAnalysisInterval.current);
@@ -288,12 +292,15 @@ export default function ScanMedicationScreen() {
 
     while (attempt < maxAttempts && !video) {
       try {
-        const recordingPromise = cameraRef.current.recordAsync(recordingOptions);
+        recordingPromise.current = cameraRef.current.recordAsync(recordingOptions);
         setRecordingStarted(true);
-        video = await recordingPromise;
+        setTimeout(() => setCanStopRecording(true), 100);
+        video = await recordingPromise.current;
       } catch (error) {
         attempt++;
+        recordingPromise.current = null;
         setRecordingStarted(false);
+        setCanStopRecording(false);
         console.error("Recording error:", error);
         if (attempt < maxAttempts) {
           Alert.alert("Recording failed", "Retrying...");
@@ -314,15 +321,26 @@ export default function ScanMedicationScreen() {
       progressAnimation.removeListener(listener);
       setIsRecording(false);
       setRecordingStarted(false);
+      setCanStopRecording(false);
+      recordingPromise.current = null;
       rotationTracker.reset();
       startFrameAnalysis();
     }
   };
 
   const stopRecording = () => {
-    if (!cameraRef.current || !recordingStarted) return;
-    // @ts-ignore: stopRecording may not be typed on cameraRef
-    cameraRef.current.stopRecording();
+    if (
+      !cameraRef.current ||
+      !recordingStarted ||
+      !canStopRecording ||
+      !recordingPromise.current
+    )
+      return;
+    setCanStopRecording(false);
+    setTimeout(() => {
+      // @ts-ignore: stopRecording may not be typed on cameraRef
+      cameraRef.current?.stopRecording();
+    }, 50);
   };
 
   const toggleCameraFacing = () => {
@@ -430,11 +448,14 @@ export default function ScanMedicationScreen() {
           <TouchableOpacity
             style={[
               styles.captureButton,
-              isProcessing && styles.disabledButton,
+              (isProcessing || (isRecording && !canStopRecording)) &&
+                styles.disabledButton,
               isRecording && styles.stopButton,
             ]}
             onPress={isRecording ? stopRecording : startRecording}
-            disabled={isProcessing}
+            disabled={
+              isProcessing || (isRecording && !canStopRecording)
+            }
           >
             {isRecording ? (
               <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
