@@ -57,7 +57,9 @@ export default function ScanMedicationScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const styles = createStyles(colorScheme);
   const router = useRouter();
-  const { method } = useLocalSearchParams<{ method?: string }>();
+  const { method } = useLocalSearchParams<{
+    method?: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto';
+  }>();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
@@ -242,14 +244,8 @@ export default function ScanMedicationScreen() {
   };
 
   useEffect(() => {
-    if (!method) return;
-    if (
-      method === "photo_stitching" ||
-      method === "single_photo" ||
-      method === "manual_guide" ||
-      method === "auto"
-    ) {
-      handleAlternativeScan(method as any);
+    if (method) {
+      handleAlternativeScan(method);
     }
   }, [method]);
 
