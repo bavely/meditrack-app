@@ -13,10 +13,6 @@ import ExpoMlkitOcr from "expo-mlkit-ocr";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from "expo-speech";
 import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
-import {
   Camera,
   Flashlight,
   FlashlightOff,
@@ -82,7 +78,6 @@ export default function ScanMedicationScreen() {
     estimatedCompleteness: 0,
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   
   // Refs
   const cameraRef = useRef<CameraView | null>(null);
@@ -124,7 +119,6 @@ export default function ScanMedicationScreen() {
           console.log('Cleanup recording stop error:', error);
         }
       }
-      ExpoSpeechRecognitionModule.stop();
     };
   }, []);
 
@@ -247,64 +241,6 @@ export default function ScanMedicationScreen() {
     }
   };
 
-  const handleVoiceInput = async () => {
-    try {
-      if (!micPermission?.granted) {
-        const status = await requestMicPermission();
-        if (!status.granted) {
-          Alert.alert("Microphone permission required");
-          return;
-        }
-      }
-      setIsListening(true);
-      setShowFallbackOptions(false);
-      await ExpoSpeechRecognitionModule.start({
-        lang: "en-US",
-        interimResults: false,
-      });
-    } catch (error) {
-      console.error('Voice input error:', error);
-      setIsListening(false);
-      setShowFallbackOptions(true);
-    }
-  };
-
-  useSpeechRecognitionEvent("result", async (event) => {
-    if (event.isFinal && event.results.length > 0) {
-      const transcript = event.results[0].transcript;
-      setIsListening(false);
-      try {
-        setIsProcessing(true);
-        const res = await handleParsedText(transcript);
-        if (
-          res &&
-          res.data &&
-          res.data.parseMedicationLabel &&
-          res.data.parseMedicationLabel.data
-        ) {
-          await navigateToConfirmation(res.data.parseMedicationLabel.data);
-        } else {
-          setShowFallbackOptions(true);
-        }
-      } catch (err) {
-        console.log('Speech processing error:', err);
-        setShowFallbackOptions(true);
-      } finally {
-        setIsProcessing(false);
-        ExpoSpeechRecognitionModule.stop();
-      }
-    }
-  });
-
-  useSpeechRecognitionEvent("error", () => {
-    setIsListening(false);
-    setShowFallbackOptions(true);
-  });
-
-  useSpeechRecognitionEvent("end", () => {
-    setIsListening(false);
-  });
-
   useEffect(() => {
     if (!method) return;
     if (
@@ -314,8 +250,6 @@ export default function ScanMedicationScreen() {
       method === "auto"
     ) {
       handleAlternativeScan(method as any);
-    } else if (method === "voice") {
-      handleVoiceInput();
     }
   }, [method]);
 
@@ -750,15 +684,6 @@ if (status === 'granted') {
         </View>
       )}
 
-      {isListening && (
-        <View style={styles.processingOverlay}>
-          <View style={styles.processingCard}>
-            <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
-            <Text style={styles.processingText}>Listening...</Text>
-          </View>
-        </View>
-      )}
-
       {showFallbackOptions && (
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
@@ -790,7 +715,7 @@ if (status === 'granted') {
             <Button
               title="Speak Label"
               variant="secondary"
-              onPress={handleVoiceInput}
+              onPress={() => router.push('/medication/voice')}
               style={styles.fallbackButton}
             />
             <Button
