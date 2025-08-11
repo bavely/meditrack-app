@@ -2,7 +2,15 @@ import { medicationTypes } from "@/constants/medications";
 // TODO: Re-enable when form functionality is implemented
 // import { useMedicationStore } from "@/store/medication-store";
 import { useRouter } from "expo-router";
-import { Camera, ChevronRight, Pill } from "lucide-react-native";
+import {
+  Camera,
+  ChevronRight,
+  Pill,
+  Layers,
+  Image as ImageIcon,
+  Hand,
+  Mic,
+} from "lucide-react-native";
 import { useState } from "react";
 import {
   ScrollView,
@@ -62,7 +70,23 @@ export default function AddMedicationScreen() {
   const handleScanPress = () => {
     router.push("/medication/scan");
   };
-  
+
+  const handlePhotoStitchingPress = () => {
+    router.push({ pathname: "/medication/scan", params: { method: "photo_stitching" } });
+  };
+
+  const handleSinglePhotoPress = () => {
+    router.push({ pathname: "/medication/scan", params: { method: "single_photo" } });
+  };
+
+  const handleManualGuidePress = () => {
+    router.push({ pathname: "/medication/scan", params: { method: "manual_guide" } });
+  };
+
+  const handleSpeakLabelPress = () => {
+    router.push({ pathname: "/medication/scan", params: { method: "voice" } });
+  };
+
   const handleAddManuallyPress = () => {
     router.push("/medication/manually");
   };
@@ -111,7 +135,47 @@ export default function AddMedicationScreen() {
         <ChevronRight size={20} color={Colors[colorScheme].tint} />
 
       </TouchableOpacity>
-      
+
+      {/* Photo Stitching button */}
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={handlePhotoStitchingPress}
+      >
+        <Layers size={20} color={Colors[colorScheme].tint} />
+        <Text style={styles.scanButtonText}>Photo Stitching</Text>
+        <ChevronRight size={20} color={Colors[colorScheme].tint} />
+      </TouchableOpacity>
+
+      {/* Single Photo button */}
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={handleSinglePhotoPress}
+      >
+        <ImageIcon size={20} color={Colors[colorScheme].tint} />
+        <Text style={styles.scanButtonText}>Single Photo</Text>
+        <ChevronRight size={20} color={Colors[colorScheme].tint} />
+      </TouchableOpacity>
+
+      {/* Manual Guidance button */}
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={handleManualGuidePress}
+      >
+        <Hand size={20} color={Colors[colorScheme].tint} />
+        <Text style={styles.scanButtonText}>Manual Guidance</Text>
+        <ChevronRight size={20} color={Colors[colorScheme].tint} />
+      </TouchableOpacity>
+
+      {/* Speak Label button */}
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={handleSpeakLabelPress}
+      >
+        <Mic size={20} color={Colors[colorScheme].tint} />
+        <Text style={styles.scanButtonText}>Speak Label</Text>
+        <ChevronRight size={20} color={Colors[colorScheme].tint} />
+      </TouchableOpacity>
+
       {/* Add Manually button */}
       <TouchableOpacity
         style={styles.scanButton}

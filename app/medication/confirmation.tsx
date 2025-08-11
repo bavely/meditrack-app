@@ -13,6 +13,7 @@ const Confirmation = () => {
     parsedMedication?.instructions || ""
   );
   const [therapy, setTherapy] = useState(parsedMedication?.therapy || "");
+  const [totalCount, setTotalCount] = useState(parsedMedication?.quantity || 0);
 
   useEffect(() => {
     console.log("🔍 Parsed Medication:", parsedMedication);
@@ -20,6 +21,7 @@ const Confirmation = () => {
     setDosage(parsedMedication?.dosage || "");
     setInstructions(parsedMedication?.instructions || "");
     setTherapy(parsedMedication?.therapy || "");
+    setTotalCount(parsedMedication?.quantity || 0);
   }, [parsedMedication]);
 
   const handleSave = () => {
@@ -28,6 +30,7 @@ const Confirmation = () => {
       dosage,
       instructions,
       therapy,
+      totalCount,
     };
 
     setParsedMedication(updatedMedication);
@@ -45,7 +48,7 @@ console.log(name, dosage, instructions, therapy , "name, dosage, instructions, t
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+    <SafeAreaView className="flex-1 pt-12 bg-white dark:bg-black">
       <View className="p-4 gap-4">
       {isEditing ? (
         <>
@@ -60,6 +63,10 @@ console.log(name, dosage, instructions, therapy , "name, dosage, instructions, t
           <Divider className="bg-gray-600" />
           <Text className="text-black dark:text-white">Therapy</Text>
           <TextInput className="border-2 border-gray-300 rounded-md p-2" value={therapy} onChangeText={setTherapy} />
+          <Divider className="bg-gray-600" />
+          {/* Total Count */}
+          <Text className="text-black dark:text-white">Total Count</Text>
+          <TextInput className="border-2 border-gray-300 rounded-md p-2" value={totalCount.toString()} onChangeText={(text) => setTotalCount(parseInt(text))} />
           <Button title="Save" onPress={handleSave} />
         </>
       ) : (
@@ -69,6 +76,7 @@ console.log(name, dosage, instructions, therapy , "name, dosage, instructions, t
           <Text className="text-black dark:text-white">Dosage: {dosage}</Text>
           <Text className="text-black dark:text-white">Instructions: {instructions}</Text>
           <Text className="text-black dark:text-white">Therapy: {therapy}</Text>
+          <Text className="text-black dark:text-white">Total Count: {totalCount}</Text>
           <Button title="Edit" onPress={() => setIsEditing(true)} />
         </>
       )}

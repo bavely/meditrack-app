@@ -5,7 +5,7 @@ const screens = [
   { name: "add", options: { title: "Add Medication" } },
   { name: "scan", options: { title: "Scan Medication" } },
   { name: "manually", options: { title: "Add Manually" } },
-  { name: "confirmation", options: { headerShown: false } },
+  { name: "confirmation", options: { title: "Confirm Medication" } },
   { name: "[id]", options: { title: "Medication" } },
 ];
 

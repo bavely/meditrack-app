@@ -9,7 +9,8 @@ import {
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from 'expo-media-library';
-import { useRouter } from "expo-router";
+import ExpoMlkitOcr from "expo-mlkit-ocr";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from "expo-speech";
 import {
   ExpoSpeechRecognitionModule,
@@ -37,7 +38,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ExpoMlkitOcr from "expo-mlkit-ocr";
 import Svg, { Circle } from "react-native-svg";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import Button from "../../components/ui/Button";
@@ -61,6 +61,7 @@ export default function ScanMedicationScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const styles = createStyles(colorScheme);
   const router = useRouter();
+  const { method } = useLocalSearchParams<{ method?: string }>();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
@@ -304,6 +305,20 @@ export default function ScanMedicationScreen() {
     setIsListening(false);
   });
 
+  useEffect(() => {
+    if (!method) return;
+    if (
+      method === "photo_stitching" ||
+      method === "single_photo" ||
+      method === "manual_guide" ||
+      method === "auto"
+    ) {
+      handleAlternativeScan(method as any);
+    } else if (method === "voice") {
+      handleVoiceInput();
+    }
+  }, [method]);
+
   const processVideo = async (uri: string) => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
 if (status === 'granted') {
@@ -395,7 +410,7 @@ if (status === 'granted') {
         frameAnalysisInterval.current = null;
       }
 
-      const duration = 8000; // Increased to 8 seconds for better data capture
+      const duration = 15000; // Increased to 15 seconds for better data capture
       const milestones = [0.25, 0.5, 0.75, 1];
       let milestoneIndex = 0;
 
