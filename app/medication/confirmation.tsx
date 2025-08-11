@@ -14,6 +14,9 @@ const Confirmation = () => {
   );
   const [therapy, setTherapy] = useState(parsedMedication?.therapy || "");
   const [totalCount, setTotalCount] = useState(parsedMedication?.quantity || 0);
+  const [lastTimeTaken, setLastTimeTaken] = useState(
+ ""
+  );
 
   useEffect(() => {
     console.log("🔍 Parsed Medication:", parsedMedication);
@@ -31,6 +34,7 @@ const Confirmation = () => {
       instructions,
       therapy,
       totalCount,
+      lastTimeTaken,
     };
 
     setParsedMedication(updatedMedication);
@@ -67,6 +71,9 @@ console.log(name, dosage, instructions, therapy , "name, dosage, instructions, t
           {/* Total Count */}
           <Text className="text-black dark:text-white">Total Count</Text>
           <TextInput className="border-2 border-gray-300 rounded-md p-2" value={totalCount.toString()} onChangeText={(text) => setTotalCount(parseInt(text))} />
+          {/* Last time taken */}
+          <Text className="text-black dark:text-white">Last Time Taken</Text>
+          <TextInput className="border-2 border-gray-300 rounded-md p-2" value={lastTimeTaken} onChangeText={setLastTimeTaken} />
           <Button title="Save" onPress={handleSave} />
         </>
       ) : (
@@ -77,6 +84,7 @@ console.log(name, dosage, instructions, therapy , "name, dosage, instructions, t
           <Text className="text-black dark:text-white">Instructions: {instructions}</Text>
           <Text className="text-black dark:text-white">Therapy: {therapy}</Text>
           <Text className="text-black dark:text-white">Total Count: {totalCount}</Text>
+          <Text className="text-black dark:text-white">Last Time Taken: {lastTimeTaken}</Text>
           <Button title="Edit" onPress={() => setIsEditing(true)} />
         </>
       )}
