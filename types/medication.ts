@@ -47,10 +47,12 @@ export interface FrequencyOption {
 }
 
 export interface ParsedMedication {
+  totalCount: any;
   name: string;
   dosage: string;
   instructions: string;
   therapy: string | null;
+  quantity?: number;
 }
 
 export interface ExtractedMedication {
