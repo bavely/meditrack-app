@@ -84,7 +84,6 @@ export default function MedicationVoiceScreen() {
           <Button title="Start" onPress={startListening} style={styles.button} />
         )}
       </View>
-      
     </SafeAreaView>
   );
 }
