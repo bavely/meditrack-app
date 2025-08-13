@@ -42,7 +42,7 @@ import { useMedicationStore } from "../../store/medication-store";
 import {
   AlternativeScanningManager,
   cleanupAlternativeScanFiles,
-} from "../../utils/alternativeScanning";
+} from "../../utils/scanners/alternativeManager";
 import {
   RotationTracker,
   analyzeFrameForBottle,
