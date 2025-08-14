@@ -90,7 +90,6 @@ export default function PanoramaCapture({ onCaptureComplete, onCancel }: Props) 
             <Text style={styles.processText}>Process</Text>
           </TouchableOpacity>
         )}
-      </View>
     </View>
   );
 }
@@ -111,3 +110,4 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
   text: { color: '#fff', fontSize: 16 },
 });
+
