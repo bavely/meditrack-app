@@ -66,6 +66,7 @@ export default function ScanMedicationScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMedia, setProcessingMedia] = useState<"video" | "photo" | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [recordingStarted, setRecordingStarted] = useState(false);
@@ -217,6 +218,7 @@ export default function ScanMedicationScreen() {
   ) => {
     let result;
     try {
+      setProcessingMedia('photo');
       setIsProcessing(true);
       setShowFallbackOptions(false);
       result = await alternativeScanner.performAlternativeScan(method);
@@ -243,6 +245,7 @@ export default function ScanMedicationScreen() {
         await cleanupAlternativeScanFiles(result);
       }
       setIsProcessing(false);
+      setProcessingMedia(null);
     }
   };
 
@@ -250,6 +253,7 @@ export default function ScanMedicationScreen() {
     setShowPanoramaCapture(false);
     let result;
     try {
+      setProcessingMedia('photo');
       setIsProcessing(true);
       result = await PhotoStitchingScanner.process(images);
       if (result.success && result.extractedText) {
@@ -279,6 +283,7 @@ export default function ScanMedicationScreen() {
         }
       }
       setIsProcessing(false);
+      setProcessingMedia(null);
     }
   };
 
@@ -314,6 +319,7 @@ if (status === 'granted') {
       }
       
       console.log("Video file info:", fileInfo);
+      setProcessingMedia('video');
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       console.log("Flattened label URI:", flattenedUri);
@@ -344,6 +350,7 @@ if (status === 'granted') {
         console.warn("Failed to delete temp files:", cleanupError);
       }
       setIsProcessing(false);
+      setProcessingMedia(null);
     }
   };
 
@@ -728,7 +735,9 @@ if (status === 'granted') {
           <View style={styles.processingCard}>
             <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
             <Text style={styles.processingText}>
-              Processing captured video...
+              {processingMedia === 'video'
+                ? 'Processing captured video...'
+                : 'Processing photo...'}
             </Text>
             <Text style={styles.processingSubtext}>
               Unwrapping cylindrical label and extracting text
