@@ -9,6 +9,8 @@ export interface PhotoStitchingOptions {
   overlapPercentage: number;
   stitchingMethod: 'horizontal' | 'cylindrical';
   enhanceText: boolean;
+  /** URL of backend stitching service */
+  stitchServiceUrl?: string;
 }
 
 /**
@@ -27,25 +29,31 @@ export class PhotoStitchingScanner {
       overlapPercentage: 20,
       stitchingMethod: 'cylindrical',
       enhanceText: true,
+      stitchServiceUrl: undefined,
       ...options,
     };
   }
 
   async capturePhotoSequence(): Promise<string[]> {
     const images: string[] = [];
+    const captureErrors: string[] = [];
 
     for (let i = 0; i < this.options.numberOfPhotos; i++) {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.8,
-        aspect: [3, 4],
-      });
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: false,
+          quality: 0.8,
+          aspect: [3, 4],
+        });
 
-      if (!result.canceled && result.assets[0]) {
-        images.push(result.assets[0].uri);
-      } else {
-        throw new Error(`Failed to capture photo ${i + 1}`);
+        if (!result.canceled && result.assets[0]) {
+          images.push(result.assets[0].uri);
+        } else {
+          captureErrors.push(`Photo ${i + 1} capture canceled or failed`);
+        }
+      } catch (error) {
+        captureErrors.push(`Photo ${i + 1} error: ${error instanceof Error ? error.message : error}`);
       }
 
       // Brief pause between captures
@@ -53,62 +61,58 @@ export class PhotoStitchingScanner {
     }
 
     this.capturedImages = images;
+
+    if (captureErrors.length > 0) {
+      throw new Error(captureErrors.join('; '));
+    }
+
     return images;
   }
 
   async stitchImages(imageUris: string[]): Promise<string> {
-    try {
-      // In a real implementation, this would use image stitching algorithms
-      // For now, we'll simulate the process and return the best single image
+    if (imageUris.length === 0) {
+      throw new Error('No images to stitch');
+    }
 
-      if (imageUris.length === 0) {
-        throw new Error('No images to stitch');
+    if (!this.options.stitchServiceUrl) {
+      throw new Error('Stitching service URL not configured');
+    }
+
+    try {
+      const formData = new FormData();
+      imageUris.forEach((uri, idx) => {
+        formData.append('images', {
+          uri,
+          name: `image_${idx}.jpg`,
+          type: 'image/jpeg',
+        } as any);
+      });
+      formData.append('method', this.options.stitchingMethod);
+
+      const response = await fetch(this.options.stitchServiceUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Stitching service responded with ${response.status}`);
       }
 
-      // Simulate stitching process
-      const stitchedImageUri = await this.simulateImageStitching(imageUris);
+      const { imageBase64 } = await response.json();
+      if (!imageBase64) {
+        throw new Error('Stitching service did not return an image');
+      }
 
-      return stitchedImageUri;
+      const stitchedUri = `${FileSystem.cacheDirectory}stitched_${Date.now()}.jpg`;
+      await FileSystem.writeAsStringAsync(stitchedUri, imageBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      return stitchedUri;
     } catch (error) {
       console.error('Image stitching failed:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error(String(error));
     }
-  }
-
-  private async simulateImageStitching(imageUris: string[]): Promise<string> {
-    // In production, this would:
-    // 1. Detect overlapping features between images
-    // 2. Estimate homographies for alignment
-    // 3. Warp and blend images into panorama
-    // 4. Apply cylindrical projection if needed
-
-    // For simulation, return the image with best detected text
-    let bestImage = imageUris[0];
-    let maxTextLength = 0;
-
-    for (const uri of imageUris) {
-      try {
-        const result = await ExpoMlkitOcr.recognizeText(uri);
-        const textLength = result.text.length;
-
-        if (textLength > maxTextLength) {
-          maxTextLength = textLength;
-          bestImage = uri;
-        }
-      } catch (error) {
-        console.warn('OCR failed for image:', uri, error);
-      }
-    }
-
-    // Copy best image to cache with stitched name
-    const timestamp = Date.now();
-    const stitchedUri = `${FileSystem.cacheDirectory}stitched_${timestamp}.jpg`;
-    await FileSystem.copyAsync({
-      from: bestImage,
-      to: stitchedUri,
-    });
-
-    return stitchedUri;
   }
 
   async performPhotoStitchingScan(): Promise<AlternativeScanResult> {
