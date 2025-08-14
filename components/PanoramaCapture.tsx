@@ -4,6 +4,7 @@ import { CameraType } from 'expo-image-picker';
 import { RefreshCcw, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CameraControls from './CameraControls';
 
 interface Props {
   onCaptureComplete: (images: string[]) => void;
@@ -62,11 +63,12 @@ export default function PanoramaCapture({ onCaptureComplete, onCancel }: Props) 
   return (
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing={CameraType.back} />
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onCancel}>
-          <X color="#fff" size={32} />
+      <CameraControls onClose={onCancel} onCapture={handleCapture} />
+      {images.length > 0 && (
+        <TouchableOpacity onPress={handleDone} style={styles.processButton}>
+          <Text style={styles.processText}>Process</Text>
         </TouchableOpacity>
-      </View>
+      )}
       <View style={styles.thumbnailStrip}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {images.map((uri, index) => (
@@ -84,25 +86,22 @@ export default function PanoramaCapture({ onCaptureComplete, onCancel }: Props) 
           ))}
         </ScrollView>
       </View>
-      <View style={styles.bottomBar}>
-        <TouchableOpacity onPress={handleCapture} style={styles.captureButton} />
-        {images.length > 0 && (
-          <TouchableOpacity onPress={handleDone} style={styles.processButton}>
-            <Text style={styles.processText}>Process</Text>
-          </TouchableOpacity>
-        )}
     </View>
-    </View>
-  )
-  }
+  );
+}
 
-  const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
-  topBar: { position: 'absolute', top: 40, left: 20, zIndex: 10 },
-  bottomBar: { position: 'absolute', bottom: 30, width: '100%', alignItems: 'center' },
-  captureButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff' },
-  processButton: { position: 'absolute', right: 20, top: 0, backgroundColor: '#007aff', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 6 },
+  processButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 60,
+    backgroundColor: '#007aff',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
   processText: { color: '#fff', fontSize: 16 },
   thumbnailStrip: { position: 'absolute', bottom: 120, width: '100%' },
   thumbnailContainer: { marginHorizontal: 5 },

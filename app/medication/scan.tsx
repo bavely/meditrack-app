@@ -14,12 +14,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from "expo-speech";
 import {
   Camera,
-  Flashlight,
-  FlashlightOff,
-  Info,
   Play,
   Square,
-  X,
 } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -37,6 +33,7 @@ import {
 import Svg, { Circle } from "react-native-svg";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import PanoramaCapture from "../../components/PanoramaCapture";
+import CameraControls from "../../components/CameraControls";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
@@ -656,28 +653,38 @@ if (status === 'granted') {
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => router.back()}
-      >
-        <X size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.flashButton} 
-        onPress={toggleFlash}
-        disabled={isRecording || isProcessing}
-      >
-        {flashEnabled ? (
-          <Flashlight size={24} color="#FFD700" />
-        ) : (
-          <FlashlightOff size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.guidanceButton} onPress={toggleGuidance}>
-        <Info size={20} color={showGuidance ? "#00FF88" : "#FFFFFF"} />
-      </TouchableOpacity>
+      <CameraControls
+        onClose={() => router.back()}
+        onCapture={isRecording ? stopRecording : startRecording}
+        captureIcon={
+          isRecording ? (
+            <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
+          ) : (
+            <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
+          )
+        }
+        captureDisabled={
+          !isCameraReady || isProcessing || (isRecording && !canStopRecording)
+        }
+        captureActive={isRecording}
+        onToggleFlash={toggleFlash}
+        flashEnabled={flashEnabled}
+        flashDisabled={isRecording || isProcessing}
+        onToggleGuidance={toggleGuidance}
+        guidanceEnabled={showGuidance}
+        bottomLeft={
+          <TouchableOpacity
+            style={[
+              styles.flipButton,
+              (isRecording || isProcessing) && styles.disabledButton,
+            ]}
+            onPress={toggleCameraFacing}
+            disabled={isRecording || isProcessing}
+          >
+            <Camera size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Camera readiness indicator */}
       {!isCameraReady && (
@@ -686,41 +693,6 @@ if (status === 'granted') {
           <Text style={styles.cameraLoadingText}>Initializing camera...</Text>
         </View>
       )}
-
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={[
-            styles.flipButton,
-            (isRecording || isProcessing) && styles.disabledButton
-          ]}
-          onPress={toggleCameraFacing}
-          disabled={isRecording || isProcessing}
-        >
-          <Camera size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.captureButton,
-            (!isCameraReady || isProcessing || (isRecording && !canStopRecording)) &&
-              styles.disabledButton,
-            isRecording && styles.stopButton,
-          ]}
-          onPress={isRecording ? stopRecording : startRecording}
-          disabled={
-            !isCameraReady || isProcessing || (isRecording && !canStopRecording)
-          }
-        >
-          {isRecording ? (
-            <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
-          ) : (
-            <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.placeholderButton} />
-      </View>
-
       {/* Quality metrics during recording */}
       {isRecording && scanningMetrics.qualityScore > 0 && (
         <View style={styles.metricsContainer}>
@@ -902,27 +874,6 @@ function createStyles(colorScheme: "light" | "dark") {
       marginTop: 10,
       fontSize: 14,
     },
-    controls: {
-      position: "absolute",
-      bottom: 40,
-      width: "100%",
-      flexDirection: "row",
-      justifyContent: "space-around",
-      alignItems: "center",
-    },
-    captureButton: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 4,
-      borderColor: "#FFFFFF",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.6)",
-    },
-    stopButton: {
-      backgroundColor: "#FF0000",
-    },
     disabledButton: {
       opacity: 0.5,
     },
@@ -930,34 +881,6 @@ function createStyles(colorScheme: "light" | "dark") {
       width: 60,
       height: 60,
       borderRadius: 30,
-      backgroundColor: "rgba(0,0,0,0.6)",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    placeholderButton: {
-      width: 60,
-      height: 60,
-    },
-    closeButton: {
-      position: "absolute",
-      top: 40,
-      left: 20,
-      zIndex: 2,
-    },
-    flashButton: {
-      position: "absolute",
-      top: 40,
-      right: 20,
-      zIndex: 2,
-    },
-    guidanceButton: {
-      position: "absolute",
-      top: 40,
-      right: 70,
-      zIndex: 2,
-      width: 40,
-      height: 40,
-      borderRadius: 20,
       backgroundColor: "rgba(0,0,0,0.6)",
       justifyContent: "center",
       alignItems: "center",
