@@ -14,7 +14,7 @@ export async function unwrapCylindricalLabel(videoUri: string): Promise<string> 
       type: "video/mp4",
     } as any);
 
-    const response = await fetch(`http://192.168.50.5:5050/unwrap?mode=panorama&debug=1`, {
+    const response = await fetch(`http://192.168.50.5:5050/unwrap`, {
       method: "POST",
       body: formData,
     });

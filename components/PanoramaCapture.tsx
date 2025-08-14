@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
-import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
-import { X, RefreshCcw } from 'lucide-react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system';
+import { CameraType } from 'expo-image-picker';
+import { RefreshCcw, X } from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   onCaptureComplete: (images: string[]) => void;
@@ -91,10 +92,11 @@ export default function PanoramaCapture({ onCaptureComplete, onCancel }: Props) 
           </TouchableOpacity>
         )}
     </View>
-  );
-}
+    </View>
+  )
+  }
 
-const styles = StyleSheet.create({
+  const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   topBar: { position: 'absolute', top: 40, left: 20, zIndex: 10 },
@@ -110,4 +112,3 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
   text: { color: '#fff', fontSize: 16 },
 });
-
