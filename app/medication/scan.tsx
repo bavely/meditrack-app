@@ -42,6 +42,7 @@ import { useMedicationStore } from "../../store/medication-store";
 import {
   AlternativeScanningManager,
   cleanupAlternativeScanFiles,
+  type AlternativeScanResult,
 } from "../../utils/alternativeScanning";
 import {
   RotationTracker,
@@ -209,10 +210,10 @@ export default function ScanMedicationScreen() {
     router.push("/medication/add");
   };
 
-  const handleAlternativeScan = async (
-    method: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto' = 'auto'
-  ) => {
-    let result;
+  const runAlternativeScan = async (
+    method: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto'
+  ): Promise<void> => {
+    let result: AlternativeScanResult | undefined;
     try {
       setIsProcessing(true);
       setShowFallbackOptions(false);
@@ -226,15 +227,17 @@ export default function ScanMedicationScreen() {
           res.data.parseMedicationLabel.data
         ) {
           await navigateToConfirmation(res.data.parseMedicationLabel.data);
-        } else {
-          setShowFallbackOptions(true);
+          return;
         }
+      }
+      throw new Error('Scan failed');
+    } catch (err) {
+      console.error(`${method} scan error:`, err);
+      if (method !== 'auto') {
+        await runAlternativeScan('auto');
       } else {
         setShowFallbackOptions(true);
       }
-    } catch (err) {
-      console.error('Alternative scanning error:', err);
-      setShowFallbackOptions(true);
     } finally {
       if (result) {
         await cleanupAlternativeScanFiles(result);
@@ -243,10 +246,17 @@ export default function ScanMedicationScreen() {
     }
   };
 
+  const startPhotoStitchingScan = () => runAlternativeScan('photo_stitching');
+  const startSinglePhotoScan = () => runAlternativeScan('single_photo');
+  const startManualGuidedScan = () => runAlternativeScan('manual_guide');
+  const startAutoScan = () => runAlternativeScan('auto');
+
   useEffect(() => {
-    if (method) {
-      handleAlternativeScan(method);
-    }
+    if (method === 'photo_stitching') startPhotoStitchingScan();
+    else if (method === 'single_photo') startSinglePhotoScan();
+    else if (method === 'manual_guide') startManualGuidedScan();
+    else if (method === 'auto') startAutoScan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [method]);
 
   const processVideo = async (uri: string) => {
@@ -285,7 +295,7 @@ if (status === 'granted') {
       }
     } catch (error) {
       console.error("Processing error:", error);
-      await handleAlternativeScan('auto');
+      await startAutoScan();
     } finally {
       try {
         if (flattenedUri) {
@@ -687,25 +697,25 @@ if (status === 'granted') {
             <Text style={styles.processingSubtext}>Choose an option</Text>
             <Button
               title="Retry Auto Scan"
-              onPress={() => handleAlternativeScan('auto')}
+              onPress={startAutoScan}
               style={styles.fallbackButton}
             />
             <Button
               title="Photo Stitching"
               variant="secondary"
-              onPress={() => handleAlternativeScan('photo_stitching')}
+              onPress={startPhotoStitchingScan}
               style={styles.fallbackButton}
             />
             <Button
               title="Single Photo"
               variant="secondary"
-              onPress={() => handleAlternativeScan('single_photo')}
+              onPress={startSinglePhotoScan}
               style={styles.fallbackButton}
             />
             <Button
               title="Manual Guidance"
               variant="secondary"
-              onPress={() => handleAlternativeScan('manual_guide')}
+              onPress={startManualGuidedScan}
               style={styles.fallbackButton}
             />
             <Button
