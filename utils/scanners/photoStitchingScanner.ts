@@ -111,25 +111,41 @@ export class PhotoStitchingScanner {
     return stitchedUri;
   }
 
-  async performPhotoStitchingScan(): Promise<AlternativeScanResult> {
+  static async process(
+    imageUris: string[],
+    options: Partial<PhotoStitchingOptions> = {}
+  ): Promise<AlternativeScanResult> {
     try {
-      const images = await this.capturePhotoSequence();
-      const stitchedImage = await this.stitchImages(images);
-
-      // Extract text from stitched image
+      const scanner = new PhotoStitchingScanner(options);
+      const stitchedImage = await scanner.stitchImages(imageUris);
       const ocrResult = await ExpoMlkitOcr.recognizeText(stitchedImage);
       const extractedText = ocrResult.text.trim();
-
-      // Calculate confidence based on text quality
-      const confidence = this.calculateTextConfidence(extractedText);
+      const confidence = scanner.calculateTextConfidence(extractedText);
 
       return {
         success: true,
         extractedText,
         confidence,
         method: 'photo_stitching',
-        images: [...images, stitchedImage],
+        images: [...imageUris, stitchedImage],
       };
+    } catch (error) {
+      return {
+        success: false,
+        extractedText: '',
+        confidence: 0,
+        method: 'photo_stitching',
+        images: imageUris,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async performPhotoStitchingScan(): Promise<AlternativeScanResult> {
+    try {
+      const images = await this.capturePhotoSequence();
+      this.capturedImages = images;
+      return await PhotoStitchingScanner.process(images, this.options);
     } catch (error) {
       return {
         success: false,
