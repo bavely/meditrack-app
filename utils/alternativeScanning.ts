@@ -6,8 +6,8 @@
  */
 
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import ExpoMlkitOcr from 'expo-mlkit-ocr';
+import stitchPhotos from './photoStitchingScanner';
 
 export interface AlternativeScanResult {
   success: boolean;
@@ -71,58 +71,17 @@ export class PhotoStitchingScanner {
   }
 
   async stitchImages(imageUris: string[]): Promise<string> {
-    try {
-      // In a real implementation, this would use image stitching algorithms
-      // For now, we'll simulate the process and return the best single image
-      
-      if (imageUris.length === 0) {
-        throw new Error('No images to stitch');
-      }
+    if (imageUris.length === 0) {
+      throw new Error('No images to stitch');
+    }
 
-      // Simulate stitching process
-      const stitchedImageUri = await this.simulateImageStitching(imageUris);
-      
+    try {
+      const stitchedImageUri = await stitchPhotos(imageUris);
       return stitchedImageUri;
     } catch (error) {
       console.error('Image stitching failed:', error);
       throw error;
     }
-  }
-
-  private async simulateImageStitching(imageUris: string[]): Promise<string> {
-    // In production, this would:
-    // 1. Detect overlapping features between images
-    // 2. Estimate homographies for alignment
-    // 3. Warp and blend images into panorama
-    // 4. Apply cylindrical projection if needed
-    
-    // For simulation, return the image with best detected text
-    let bestImage = imageUris[0];
-    let maxTextLength = 0;
-
-    for (const uri of imageUris) {
-      try {
-        const result = await ExpoMlkitOcr.recognizeText(uri);
-        const textLength = result.text.length;
-
-        if (textLength > maxTextLength) {
-          maxTextLength = textLength;
-          bestImage = uri;
-        }
-      } catch (error) {
-        console.warn('OCR failed for image:', uri, error);
-      }
-    }
-
-    // Copy best image to cache with stitched name
-    const timestamp = Date.now();
-    const stitchedUri = `${FileSystem.cacheDirectory}stitched_${timestamp}.jpg`;
-    await FileSystem.copyAsync({
-      from: bestImage,
-      to: stitchedUri,
-    });
-
-    return stitchedUri;
   }
 
   async performPhotoStitchingScan(): Promise<AlternativeScanResult> {
