@@ -36,6 +36,7 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
+import PanoramaCapture from "../../components/PanoramaCapture";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
@@ -43,6 +44,7 @@ import {
   AlternativeScanningManager,
   cleanupAlternativeScanFiles,
 } from "../../utils/scanners/alternativeManager";
+import { PhotoStitchingScanner } from "../../utils/scanners/photoStitchingScanner";
 import {
   RotationTracker,
   analyzeFrameForBottle,
@@ -80,6 +82,7 @@ export default function ScanMedicationScreen() {
     estimatedCompleteness: 0,
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
+  const [showPanoramaCapture, setShowPanoramaCapture] = useState(false);
   
   // Refs
   const cameraRef = useRef<CameraView | null>(null);
@@ -243,9 +246,54 @@ export default function ScanMedicationScreen() {
     }
   };
 
+  const handlePanoramaResult = async (images: string[]) => {
+    setShowPanoramaCapture(false);
+    let result;
+    try {
+      setIsProcessing(true);
+      result = await PhotoStitchingScanner.process(images);
+      if (result.success && result.extractedText) {
+        const res = await handleParsedText(result.extractedText);
+        if (
+          res &&
+          res.data &&
+          res.data.parseMedicationLabel &&
+          res.data.parseMedicationLabel.data
+        ) {
+          await navigateToConfirmation(res.data.parseMedicationLabel.data);
+        } else {
+          setShowFallbackOptions(true);
+        }
+      } else {
+        setShowFallbackOptions(true);
+      }
+    } catch (err) {
+      console.error('Photo stitching error:', err);
+      setShowFallbackOptions(true);
+    } finally {
+      if (result) {
+        await cleanupAlternativeScanFiles(result);
+      } else {
+        for (const uri of images) {
+          await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+        }
+      }
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePanoramaCancel = () => {
+    setShowPanoramaCapture(false);
+    setShowFallbackOptions(true);
+  };
+
   useEffect(() => {
     if (method) {
-      handleAlternativeScan(method);
+      if (method === 'photo_stitching') {
+        setShowPanoramaCapture(true);
+      } else {
+        handleAlternativeScan(method);
+      }
     }
   }, [method]);
 
@@ -553,6 +601,15 @@ if (status === 'granted') {
     );
   }
 
+  if (showPanoramaCapture) {
+    return (
+      <PanoramaCapture
+        onCaptureComplete={handlePanoramaResult}
+        onCancel={handlePanoramaCancel}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <CameraView
@@ -693,7 +750,10 @@ if (status === 'granted') {
             <Button
               title="Photo Stitching"
               variant="secondary"
-              onPress={() => handleAlternativeScan('photo_stitching')}
+              onPress={() => {
+                setShowFallbackOptions(false);
+                setShowPanoramaCapture(true);
+              }}
               style={styles.fallbackButton}
             />
             <Button

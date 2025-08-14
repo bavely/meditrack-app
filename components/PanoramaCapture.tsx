@@ -1,159 +1,113 @@
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { Camera, Check, X } from "lucide-react-native";
-import React, { useRef, useState } from "react";
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Button from "./ui/Button";
+import { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
+import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import { X, RefreshCcw } from 'lucide-react-native';
+import * as FileSystem from 'expo-file-system';
 
-interface PanoramaCaptureProps {
-  /** Callback invoked when user finishes capturing and wants to process images */
-  onProcess: (uris: string[]) => void;
-  /** Optional handler when user cancels the capture session */
-  onCancel?: () => void;
+interface Props {
+  onCaptureComplete: (images: string[]) => void;
+  onCancel: () => void;
 }
 
-export default function PanoramaCapture({ onProcess, onCancel }: PanoramaCaptureProps) {
+export default function PanoramaCapture({ onCaptureComplete, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [photos, setPhotos] = useState<string[]>([]);
   const cameraRef = useRef<CameraView | null>(null);
-  const colorScheme = useColorScheme() ?? "light";
-  const styles = createStyles(colorScheme);
+  const [images, setImages] = useState<string[]>([]);
+  const [retakeIndex, setRetakeIndex] = useState<number | null>(null);
 
-  const takePhoto = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-        if (photo?.uri) {
-          setPhotos((prev) => [...prev, photo.uri]);
-        }
-      } catch (error) {
-        console.warn("Failed to capture photo", error);
-      }
-    }
-  };
-
-  if (!permission) {
-    return <View style={styles.permissionContainer} />;
-  }
-
-  if (!permission.granted) {
+  if (!permission?.granted) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>Camera access is required</Text>
-        <Button title="Grant permission" onPress={requestPermission} />
+      <View style={styles.centered}>
+        <Text style={styles.text}>Camera permission is required.</Text>
+        <TouchableOpacity onPress={requestPermission}>
+          <Text style={[styles.text, { color: '#4da3ff' }]}>Grant Permission</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
+  const handleCapture = async () => {
+    if (!cameraRef.current) return;
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      if (retakeIndex !== null) {
+        const next = [...images];
+        await FileSystem.deleteAsync(next[retakeIndex], { idempotent: true }).catch(() => {});
+        next[retakeIndex] = photo.uri;
+        setImages(next);
+        setRetakeIndex(null);
+      } else {
+        setImages([...images, photo.uri]);
+      }
+    } catch (e) {
+      console.warn('Capture failed', e);
+    }
+  };
+
+  const handleDelete = async (index: number) => {
+    const uri = images[index];
+    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+    setImages(images.filter((_, i) => i !== index));
+  };
+
+  const handleRetake = (index: number) => {
+    setRetakeIndex(index);
+  };
+
+  const handleDone = () => {
+    onCaptureComplete(images);
+  };
+
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} ref={cameraRef} />
-
-      {/* Capture Controls */}
-      <View style={styles.controls}>
-        {onCancel && (
-          <TouchableOpacity style={styles.iconButton} onPress={onCancel}>
-            <X size={24} color={Colors[colorScheme].foreground} />
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-          <Camera size={28} color={Colors[colorScheme].foreground} />
+      <CameraView ref={cameraRef} style={styles.camera} facing={CameraType.back} />
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={onCancel}>
+          <X color="#fff" size={32} />
         </TouchableOpacity>
-
-        {photos.length > 0 && (
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => onProcess(photos)}
-          >
-            <Check size={24} color={Colors[colorScheme].foreground} />
-          </TouchableOpacity>
-        )}
       </View>
-
-      {/* Thumbnail preview */}
-      {photos.length > 0 && (
-        <ScrollView
-          horizontal
-          style={styles.previewStrip}
-          contentContainerStyle={styles.previewContent}
-        >
-          {photos.map((uri) => (
-            <Image source={{ uri }} key={uri} style={styles.thumbnail} />
+      <View style={styles.thumbnailStrip}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {images.map((uri, index) => (
+            <View key={uri} style={styles.thumbnailContainer}>
+              <Image source={{ uri }} style={styles.thumbnail} />
+              <View style={styles.thumbActions}>
+                <TouchableOpacity onPress={() => handleRetake(index)} style={styles.thumbButton}>
+                  <RefreshCcw color="#fff" size={16} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(index)} style={styles.thumbButton}>
+                  <X color="#fff" size={16} />
+                </TouchableOpacity>
+              </View>
+            </View>
           ))}
         </ScrollView>
-      )}
+      </View>
+      <View style={styles.bottomBar}>
+        <TouchableOpacity onPress={handleCapture} style={styles.captureButton} />
+        {images.length > 0 && (
+          <TouchableOpacity onPress={handleDone} style={styles.processButton}>
+            <Text style={styles.processText}>Process</Text>
+          </TouchableOpacity>
+        )}
     </View>
   );
 }
 
-function createStyles(colorScheme: "light" | "dark") {
-  return StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors[colorScheme].background },
-    camera: { flex: 1 },
-    controls: {
-      position: "absolute",
-      bottom: 20,
-      left: 0,
-      right: 0,
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      gap: 40,
-    },
-    captureButton: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      backgroundColor: Colors[colorScheme].tint,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    iconButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: Colors[colorScheme].surface,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    previewStrip: {
-      position: "absolute",
-      bottom: 120,
-      left: 0,
-      right: 0,
-    },
-    previewContent: {
-      paddingHorizontal: 8,
-    },
-    thumbnail: {
-      width: 60,
-      height: 60,
-      borderRadius: 8,
-      marginHorizontal: 4,
-    },
-    permissionContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24,
-    },
-    permissionText: {
-      fontSize: 16,
-      color: Colors[colorScheme].text,
-      marginBottom: 12,
-      textAlign: "center",
-    },
-  });
-}
-
-export { PanoramaCaptureProps };
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  camera: { flex: 1 },
+  topBar: { position: 'absolute', top: 40, left: 20, zIndex: 10 },
+  bottomBar: { position: 'absolute', bottom: 30, width: '100%', alignItems: 'center' },
+  captureButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff' },
+  processButton: { position: 'absolute', right: 20, top: 0, backgroundColor: '#007aff', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 6 },
+  processText: { color: '#fff', fontSize: 16 },
+  thumbnailStrip: { position: 'absolute', bottom: 120, width: '100%' },
+  thumbnailContainer: { marginHorizontal: 5 },
+  thumbnail: { width: 80, height: 80, borderRadius: 4 },
+  thumbActions: { position: 'absolute', top: 2, right: 2, flexDirection: 'row' },
+  thumbButton: { backgroundColor: 'rgba(0,0,0,0.6)', padding: 2, marginLeft: 2, borderRadius: 3 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
+  text: { color: '#fff', fontSize: 16 },
+});
 
