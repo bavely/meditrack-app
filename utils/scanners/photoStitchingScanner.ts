@@ -142,6 +142,48 @@ export class PhotoStitchingScanner {
     }
   }
 
+  /**
+   * Processes a sequence of images that were captured externally.
+   *
+   * This allows a single camera session to collect all photos and
+   * then pass them in for stitching without re-launching the camera
+   * for each capture.
+   */
+  async processImageSequence(imageUris: string[]): Promise<AlternativeScanResult> {
+    try {
+      if (!imageUris.length) {
+        throw new Error('No images provided');
+      }
+
+      this.capturedImages = imageUris;
+      const stitchedImage = await this.stitchImages(imageUris);
+
+      // Extract text from stitched image
+      const ocrResult = await ExpoMlkitOcr.recognizeText(stitchedImage);
+      const extractedText = ocrResult.text.trim();
+
+      // Calculate confidence based on text quality
+      const confidence = this.calculateTextConfidence(extractedText);
+
+      return {
+        success: true,
+        extractedText,
+        confidence,
+        method: 'photo_stitching',
+        images: [...imageUris, stitchedImage],
+      };
+    } catch (error) {
+      return {
+        success: false,
+        extractedText: '',
+        confidence: 0,
+        method: 'photo_stitching',
+        images: imageUris,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
   private calculateTextConfidence(text: string): number {
     // Simple heuristic for text quality assessment
     if (!text || text.length < 10) return 0.1;
