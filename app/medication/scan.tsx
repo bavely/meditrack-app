@@ -31,17 +31,12 @@ import {
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import CameraControls from "../../components/CameraControls";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import PanoramaCapture from "../../components/PanoramaCapture";
-import CameraControls from "../../components/CameraControls";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
-import {
-  AlternativeScanningManager,
-  cleanupAlternativeScanFiles,
-} from "../../utils/scanners/alternativeManager";
-import { PhotoStitchingScanner } from "../../utils/scanners/photoStitchingScanner";
 import {
   RotationTracker,
   analyzeFrameForBottle,
@@ -50,6 +45,11 @@ import {
   type ScanningMetrics
 } from "../../utils/bottleDetection";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
+import {
+  AlternativeScanningManager,
+  cleanupAlternativeScanFiles,
+} from "../../utils/scanners/alternativeManager";
+import { PhotoStitchingScanner } from "../../utils/scanners/photoStitchingScanner";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
@@ -204,6 +204,51 @@ export default function ScanMedicationScreen() {
     }
   };
 
+  function processPanoramaText(texts: string[]): string {
+    console.log("Processing panorama text:", texts);
+    if (!texts.length) return "";
+  
+    // Start with the first capture
+    let merged = texts[0].trim();
+  
+    // Helper: find the longest overlap between end of `a` and start of `b`
+    function findOverlap(a: string, b: string): number {
+      const maxLen = Math.min(a.length, b.length);
+      for (let len = maxLen; len > 0; len--) {
+        if (a.endsWith(b.slice(0, len))) {
+          return len;
+        }
+      }
+      return 0;
+    }
+  
+    for (let i = 1; i < texts.length; i++) {
+      const segment = texts[i].trim();
+      if (!segment) continue;
+  
+      // Compute overlap
+      const overlapLen = findOverlap(merged, segment);
+      // If overlap is substantial, merge; otherwise insert a line break
+      if (overlapLen > segment.split(/\s+/).slice(0, 3).join(" ").length / 2) {
+        merged = merged + segment.slice(overlapLen);
+      } else {
+        merged = merged + "\n" + segment;
+      }
+    }
+  
+    // Post-processing: collapse repeated lines
+    const lines = merged.split("\n");
+    const seen = new Set<string>();
+    const unique = lines.filter((line) => {
+      const key = line.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  
+    return unique.join("\n").trim();
+  }
+
   const handleNavigationError = (error: any) => {
     console.log("🧠 Parsed Text Error:", JSON.stringify(error));
     setIsProcessing(false);
@@ -253,6 +298,7 @@ export default function ScanMedicationScreen() {
       setProcessingMedia('photo');
       setIsProcessing(true);
       result = await PhotoStitchingScanner.process(images);
+      console.log("Panorama stitching result:", result);
       if (result.success && result.extractedText) {
         const res = await handleParsedText(result.extractedText);
         if (
@@ -307,7 +353,7 @@ if (status === 'granted') {
   console.log('Saved to gallery');
 }
     console.log("Processing video URI:", uri);
-    let flattenedUri: string | null = null;
+    let flattenedUri: string[] | null = null;
     try {
       // Check if file exists and has size
       const fileInfo = await FileSystem.getInfoAsync(uri);
@@ -320,9 +366,18 @@ if (status === 'granted') {
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       console.log("Flattened label URI:", flattenedUri);
-      const recognized = await ExpoMlkitOcr.recognizeText(flattenedUri);
+      // Here logic will be changed to accept flattenedUri as an array
+
+          const texts = await Promise.all(flattenedUri.map(async (uri) => {
+      const response = await ExpoMlkitOcr.recognizeText(uri)
+      return response.text.trim();
+    }));
+console.log("Texts From clyindericalUnrap: ====================================================>", texts);
+    const recognized = await processPanoramaText(await Promise.all(texts));
+      // console.log("Flattened label URI:", flattenedUri);
+      // const recognized = await ExpoMlkitOcr.recognizeText(flattenedUri);
       console.log("OCR recognized text:", recognized);
-      const labelText = recognized.text.trim();
+      const labelText = recognized.trim();
       const res = await handleParsedText(labelText);
       if (
         res &&
@@ -339,8 +394,11 @@ if (status === 'granted') {
       await handleAlternativeScan('auto');
     } finally {
       try {
-        if (flattenedUri) {
-          await FileSystem.deleteAsync(flattenedUri, { idempotent: true });
+        if (flattenedUri?.length) {
+          flattenedUri.forEach((uri) => {
+            FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+          });
+          // await FileSystem.deleteAsync(flattenedUri, { idempotent: true });
         }
         await FileSystem.deleteAsync(uri, { idempotent: true });
       } catch (cleanupError) {
