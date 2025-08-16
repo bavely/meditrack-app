@@ -1,16 +1,55 @@
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import ExpoMlkitOcr from 'expo-mlkit-ocr';
 
 import type { AlternativeScanResult } from './types';
+
+function mergePanoramaText(texts: string[]): string {
+  if (!texts.length) return '';
+
+  let merged = texts[0].trim();
+
+  function findOverlap(a: string, b: string): number {
+    const maxLen = Math.min(a.length, b.length);
+    for (let len = maxLen; len > 0; len--) {
+      if (a.endsWith(b.slice(0, len))) {
+        return len;
+      }
+    }
+    return 0;
+  }
+
+  for (let i = 1; i < texts.length; i++) {
+    const segment = texts[i].trim();
+    if (!segment) continue;
+
+    const overlapLen = findOverlap(merged, segment);
+    if (
+      overlapLen >
+      segment.split(/\s+/).slice(0, 3).join(' ').length / 2
+    ) {
+      merged = merged + segment.slice(overlapLen);
+    } else {
+      merged = merged + '\n' + segment;
+    }
+  }
+
+  const lines = merged.split('\n');
+  const seen = new Set<string>();
+  const unique = lines.filter(line => {
+    const key = line.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return unique.join('\n').trim();
+}
 
 export interface PhotoStitchingOptions {
   numberOfPhotos: number;
   overlapPercentage: number;
   stitchingMethod: 'horizontal' | 'cylindrical';
   enhanceText: boolean;
-  /** URL of backend stitching service */
-  stitchServiceUrl?: string;
 }
 
 /**
@@ -29,7 +68,6 @@ export class PhotoStitchingScanner {
       overlapPercentage: 20,
       stitchingMethod: 'cylindrical',
       enhanceText: true,
-      stitchServiceUrl: undefined,
       ...options,
     };
   }
@@ -69,61 +107,19 @@ export class PhotoStitchingScanner {
     return images;
   }
 
-  async stitchImages(imageUris: string[]): Promise<string> {
-    if (imageUris.length === 0) {
-      throw new Error('No images to stitch');
-    }
-
-    if (!this.options.stitchServiceUrl) {
-      throw new Error('Stitching service URL not configured');
-    }
-
-    try {
-      const formData = new FormData();
-      imageUris.forEach((uri, idx) => {
-        formData.append('images', {
-          uri,
-          name: `image_${idx}.jpg`,
-          type: 'image/jpeg',
-        } as any);
-      });
-      formData.append('method', this.options.stitchingMethod);
-
-      const response = await fetch(this.options.stitchServiceUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Stitching service responded with ${response.status}`);
-      }
-
-      const { imageBase64 } = await response.json();
-      if (!imageBase64) {
-        throw new Error('Stitching service did not return an image');
-      }
-
-      const stitchedUri = `${FileSystem.cacheDirectory}stitched_${Date.now()}.jpg`;
-      await FileSystem.writeAsStringAsync(stitchedUri, imageBase64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      return stitchedUri;
-    } catch (error) {
-      console.error('Image stitching failed:', error);
-      throw error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
   static async process(
     imageUris: string[],
     options: Partial<PhotoStitchingOptions> = {}
   ): Promise<AlternativeScanResult> {
     try {
       const scanner = new PhotoStitchingScanner(options);
-      const stitchedImage = await scanner.stitchImages(imageUris);
-      const ocrResult = await ExpoMlkitOcr.recognizeText(stitchedImage);
-      const extractedText = ocrResult.text.trim();
+      const texts = await Promise.all(
+        imageUris.map(async uri => {
+          const res = await ExpoMlkitOcr.recognizeText(uri);
+          return res.text.trim();
+        })
+      );
+      const extractedText = mergePanoramaText(texts);
       const confidence = scanner.calculateTextConfidence(extractedText);
 
       return {
@@ -131,7 +127,7 @@ export class PhotoStitchingScanner {
         extractedText,
         confidence,
         method: 'photo_stitching',
-        images: [...imageUris, stitchedImage],
+        images: imageUris,
       };
     } catch (error) {
       return {
@@ -176,11 +172,13 @@ export class PhotoStitchingScanner {
       }
 
       this.capturedImages = imageUris;
-      const stitchedImage = await this.stitchImages(imageUris);
-
-      // Extract text from stitched image
-      const ocrResult = await ExpoMlkitOcr.recognizeText(stitchedImage);
-      const extractedText = ocrResult.text.trim();
+      const texts = await Promise.all(
+        imageUris.map(async uri => {
+          const res = await ExpoMlkitOcr.recognizeText(uri);
+          return res.text.trim();
+        })
+      );
+      const extractedText = mergePanoramaText(texts);
 
       // Calculate confidence based on text quality
       const confidence = this.calculateTextConfidence(extractedText);
@@ -190,7 +188,7 @@ export class PhotoStitchingScanner {
         extractedText,
         confidence,
         method: 'photo_stitching',
-        images: [...imageUris, stitchedImage],
+        images: imageUris,
       };
     } catch (error) {
       return {
