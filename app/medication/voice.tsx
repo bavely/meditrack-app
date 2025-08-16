@@ -240,14 +240,19 @@ export default function MedicationVoiceScreen() {
     setHasPlayed(false);
   };
 
-  // Clean up the sound and speech recognition module when the
-  // component is unmounted or when the sound instance changes.
+  // Unload any previous sound when a new `Audio.Sound` instance is set.
   useEffect(() => {
     return () => {
       sound?.unloadAsync();
-      ExpoSpeechRecognitionModule.stop();
     };
   }, [sound]);
+
+  // Stop speech recognition when the component unmounts.
+  useEffect(() => {
+    return () => {
+      ExpoSpeechRecognitionModule.stop();
+    };
+  }, []);
 
   /**
    * Render the UI. The layout adjusts based on whether the user is
