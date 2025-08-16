@@ -159,9 +159,18 @@ export default function MedicationVoiceScreen() {
     }
   });
 
-  // Stop the listening indicator on errors
-  useSpeechRecognitionEvent("error", () => {
+  // Stop the listening indicator on errors and terminate recognition
+  useSpeechRecognitionEvent("error", async (event) => {
     setIsListening(false);
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+    } catch (err) {
+      console.error("Speech recognition stop error:", err);
+    }
+    Alert.alert(
+      "Speech recognition error",
+      (event as any)?.error?.message || "Please try again."
+    );
   });
 
   /**
