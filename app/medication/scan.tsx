@@ -57,7 +57,7 @@ export default function ScanMedicationScreen() {
   const styles = createStyles(colorScheme);
   const router = useRouter();
   const { method } = useLocalSearchParams<{
-    method?: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto';
+    method?: 'photo_stitching' | 'single_photo'  | 'auto';
   }>();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
@@ -256,7 +256,7 @@ export default function ScanMedicationScreen() {
   };
 
   const handleAlternativeScan = async (
-    method: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto' = 'auto'
+    method: 'photo_stitching' | 'single_photo'  | 'auto' = 'auto'
   ) => {
     let result;
     try {
@@ -799,12 +799,6 @@ console.log("Texts From clyindericalUnrap: =====================================
               title="Single Photo"
               variant="secondary"
               onPress={() => handleAlternativeScan('single_photo')}
-              style={styles.fallbackButton}
-            />
-            <Button
-              title="Manual Guidance"
-              variant="secondary"
-              onPress={() => handleAlternativeScan('manual_guide')}
               style={styles.fallbackButton}
             />
             <Button

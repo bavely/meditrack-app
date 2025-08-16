@@ -5,11 +5,10 @@ import { useRouter } from "expo-router";
 import {
   Camera,
   ChevronRight,
-  Pill,
-  Layers,
   Image as ImageIcon,
-  Hand,
+  Layers,
   Mic,
+  Pill
 } from "lucide-react-native";
 import { useState } from "react";
 import {
@@ -79,10 +78,6 @@ export default function AddMedicationScreen() {
     router.push({ pathname: "/medication/scan", params: { method: "single_photo" } });
   };
 
-  const handleManualGuidePress = () => {
-    router.push({ pathname: "/medication/scan", params: { method: "manual_guide" } });
-  };
-
   const handleSpeakLabelPress = () => {
     router.push("/medication/voice");
   };
@@ -142,7 +137,7 @@ export default function AddMedicationScreen() {
         onPress={handlePhotoStitchingPress}
       >
         <Layers size={20} color={Colors[colorScheme].tint} />
-        <Text style={styles.scanButtonText}>Photo Stitching</Text>
+        <Text style={styles.scanButtonText}>Multi Capture Photos</Text>
         <ChevronRight size={20} color={Colors[colorScheme].tint} />
       </TouchableOpacity>
 
@@ -153,16 +148,6 @@ export default function AddMedicationScreen() {
       >
         <ImageIcon size={20} color={Colors[colorScheme].tint} />
         <Text style={styles.scanButtonText}>Single Photo</Text>
-        <ChevronRight size={20} color={Colors[colorScheme].tint} />
-      </TouchableOpacity>
-
-      {/* Manual Guidance button */}
-      <TouchableOpacity
-        style={styles.scanButton}
-        onPress={handleManualGuidePress}
-      >
-        <Hand size={20} color={Colors[colorScheme].tint} />
-        <Text style={styles.scanButtonText}>Manual Guidance</Text>
         <ChevronRight size={20} color={Colors[colorScheme].tint} />
       </TouchableOpacity>
 

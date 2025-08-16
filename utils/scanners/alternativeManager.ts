@@ -1,9 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 
-import type { AlternativeScanResult } from './types';
 import { PhotoStitchingScanner } from './photoStitchingScanner';
 import { SinglePhotoScanner } from './singlePhotoScanner';
-import { ManualGuidanceScanner } from './manualGuidanceScanner';
+import type { AlternativeScanResult } from './types';
+
 
 /**
  * Alternative Scanning Manager
@@ -13,10 +13,10 @@ import { ManualGuidanceScanner } from './manualGuidanceScanner';
 export class AlternativeScanningManager {
   private photoStitcher = new PhotoStitchingScanner();
   private singlePhotoScanner = new SinglePhotoScanner();
-  private manualScanner = new ManualGuidanceScanner();
+
 
   async performAlternativeScan(
-    preferredMethod?: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto'
+    preferredMethod?: 'photo_stitching' | 'single_photo' | 'auto'
   ): Promise<AlternativeScanResult> {
     const method = preferredMethod || 'auto';
 
@@ -26,10 +26,6 @@ export class AlternativeScanningManager {
 
       case 'single_photo':
         return this.singlePhotoScanner.performSinglePhotoScan();
-
-      case 'manual_guide':
-        return this.manualScanner.performGuidedScan();
-
       case 'auto':
       default:
         return this.performAutoFallbackScan();
@@ -57,7 +53,7 @@ export class AlternativeScanningManager {
 
     // 3. Fall back to manual guidance (highest success rate)
     console.log('Falling back to manual guidance scan...');
-    return this.manualScanner.performGuidedScan();
+    return await this.photoStitcher.performPhotoStitchingScan();
   }
 
   reset(): void {
