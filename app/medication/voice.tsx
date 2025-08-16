@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useMicrophonePermissions } from "expo-camera";
 import { Audio } from "expo-av";
+import { useMicrophonePermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import { useEffect, useState } from "react";
@@ -9,9 +9,11 @@ import { useEffect, useState } from "react";
 
 
 
-import {  ActivityIndicator,
+import {
+  ActivityIndicator,
   Alert,
-  Pressable, Alert, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+  Pressable, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle
+} from "react-native";
 import RecordingIndicator from "../../components/RecordingIndicator";
 import Button from "../../components/ui/Button";
 
@@ -146,15 +148,15 @@ export default function MedicationVoiceScreen() {
             <Button
               title={isPlaying ? "Pause" : "Play"}
               onPress={togglePlayback}
-              style={styles.button}
+              style={styles.micButton}
             />
             <Button
               title="Submit"
               onPress={handleSubmit}
               disabled={!hasPlayed}
-              style={styles.button}
+              style={styles.micButton}
             />
-            <Button title="Re-record" onPress={reRecord} style={styles.button} />
+            <Button title="Re-record" onPress={reRecord} style={styles.micButton} />
           </>
         ) : isListening ? (
           <>
@@ -163,10 +165,10 @@ export default function MedicationVoiceScreen() {
               <RecordingIndicator active={isListening} />
               <Text style={styles.indicatorText}>Listening...</Text>
             </View>
-            <Button title="Stop" onPress={stopListening} style={styles.button} />
+            <Button title="Stop" onPress={stopListening} style={styles.micButton} />
           </>
         ) : (
-          <Button title="Start" onPress={startListening} style={styles.button} />
+          <Button title="Start" onPress={startListening} style={styles.micButton} />
 
         )}
         <Pressable
@@ -230,6 +232,7 @@ function createStyles(colorScheme: "light" | "dark") {
       backgroundColor: Colors[colorScheme].tint,
       justifyContent: "center",
       alignItems: "center",
-    },
+    }
+
   });
 }
