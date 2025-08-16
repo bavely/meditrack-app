@@ -4,9 +4,15 @@ import { useMicrophonePermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import { useState } from "react";
-import { Alert, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+
+import {  ActivityIndicator,
+  Alert,
+  Pressable, Alert, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
 import RecordingIndicator from "../../components/RecordingIndicator";
 import Button from "../../components/ui/Button";
+
+import { Ionicons } from "@expo/vector-icons";
+
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
 
@@ -76,6 +82,7 @@ export default function MedicationVoiceScreen() {
         {isListening ? (
           <>
             <View style={styles.indicator}>
+              <ActivityIndicator color={Colors[colorScheme].tint} />
               <RecordingIndicator active={isListening} />
               <Text style={styles.indicatorText}>Listening...</Text>
             </View>
@@ -83,7 +90,22 @@ export default function MedicationVoiceScreen() {
           </>
         ) : (
           <Button title="Start" onPress={startListening} style={styles.button} />
+
         )}
+        <Pressable
+          style={({ pressed }) => [
+            styles.micButton,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPressIn={startListening}
+          onPressOut={stopListening}
+        >
+          <Ionicons
+            name="mic"
+            size={32}
+            color={Colors[colorScheme].foreground}
+          />
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -96,7 +118,7 @@ type Styles = {
   indicator: ViewStyle;
   indicatorText: TextStyle;
   message: TextStyle;
-  button: ViewStyle;
+  micButton: ViewStyle;
 };
 
 function createStyles(colorScheme: "light" | "dark") {
@@ -124,8 +146,13 @@ function createStyles(colorScheme: "light" | "dark") {
       color: Colors[colorScheme].text,
       fontSize: 16,
     },
-    button: {
-      width: 200,
+    micButton: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: Colors[colorScheme].tint,
+      justifyContent: "center",
+      alignItems: "center",
     },
   });
 }
