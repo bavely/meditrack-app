@@ -4,18 +4,15 @@ import { useMicrophonePermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import { useState } from "react";
-import {
-  ActivityIndicator,
+
+import {  ActivityIndicator,
   Alert,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-} from "react-native";
+  Pressable, Alert, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+import RecordingIndicator from "../../components/RecordingIndicator";
+import Button from "../../components/ui/Button";
+
 import { Ionicons } from "@expo/vector-icons";
+
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
 
@@ -82,11 +79,18 @@ export default function MedicationVoiceScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {isListening && (
-          <View style={styles.indicator}>
-            <ActivityIndicator color={Colors[colorScheme].tint} />
-            <Text style={styles.indicatorText}>Listening...</Text>
-          </View>
+        {isListening ? (
+          <>
+            <View style={styles.indicator}>
+              <ActivityIndicator color={Colors[colorScheme].tint} />
+              <RecordingIndicator active={isListening} />
+              <Text style={styles.indicatorText}>Listening...</Text>
+            </View>
+            <Button title="Stop" onPress={stopListening} style={styles.button} />
+          </>
+        ) : (
+          <Button title="Start" onPress={startListening} style={styles.button} />
+
         )}
         <Pressable
           style={({ pressed }) => [
