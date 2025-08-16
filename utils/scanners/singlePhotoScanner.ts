@@ -36,22 +36,25 @@ export class SinglePhotoScanner {
     return imageUri;
   }
 
-  async performSinglePhotoScan(): Promise<AlternativeScanResult> {
+  async performSinglePhotoScan(imageUri?: string): Promise<AlternativeScanResult> {
     try {
-      const imageUri = await this.captureSinglePhoto();
-      const enhancedUri = await this.enhanceImageForOCR(imageUri);
+      const captureUri = imageUri ?? (await this.captureSinglePhoto());
+      const enhancedUri = await this.enhanceImageForOCR(captureUri);
 
       const ocrResult = await ExpoMlkitOcr.recognizeText(enhancedUri);
       const extractedText = ocrResult.text.trim();
 
-      const confidence = this.calculateSinglePhotoConfidence(extractedText, ocrResult);
+      const confidence = this.calculateSinglePhotoConfidence(
+        extractedText,
+        ocrResult
+      );
 
       return {
         success: true,
         extractedText,
         confidence,
         method: 'single_photo',
-        images: [imageUri, enhancedUri],
+        images: [captureUri, enhancedUri],
       };
     } catch (error) {
       return {
@@ -59,7 +62,7 @@ export class SinglePhotoScanner {
         extractedText: '',
         confidence: 0,
         method: 'single_photo',
-        images: [],
+        images: imageUri ? [imageUri] : [],
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
