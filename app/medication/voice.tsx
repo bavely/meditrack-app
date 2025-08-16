@@ -147,6 +147,19 @@ export default function MedicationVoiceScreen() {
       }
       setRecording(null);
     }
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        playThroughEarpieceAndroid: false,
+      });
+    } catch (err) {
+      console.error("Audio mode reset error:", err);
+    }
   };
 
   /**
