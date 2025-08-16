@@ -130,7 +130,7 @@ export default function MedicationVoiceScreen() {
    * Stop the active recording and speech recognition. The recorded
    * audio URI is saved for playback. Errors are caught and logged
    * without crashing the app.
-   */
+  */
   const stopListening = async () => {
     setIsListening(false);
     ExpoSpeechRecognitionModule.stop();
@@ -142,6 +142,19 @@ export default function MedicationVoiceScreen() {
         console.error("Recording stop error:", err);
       }
       setRecording(null);
+    }
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        playThroughEarpieceAndroid: false,
+      });
+    } catch (err) {
+      console.error("Audio mode reset error:", err);
     }
   };
 
