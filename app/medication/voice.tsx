@@ -130,10 +130,14 @@ export default function MedicationVoiceScreen() {
    * Stop the active recording and speech recognition. The recorded
    * audio URI is saved for playback. Errors are caught and logged
    * without crashing the app.
-   */
+  */
   const stopListening = async () => {
     setIsListening(false);
-    ExpoSpeechRecognitionModule.stop();
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+    } catch (err) {
+      console.error("Speech recognition stop error:", err);
+    }
     if (recording) {
       try {
         await recording.stopAndUnloadAsync();
@@ -151,11 +155,15 @@ export default function MedicationVoiceScreen() {
    * indicator is stopped. The recognition session is also
    * terminated by calling `ExpoSpeechRecognitionModule.stop()`.
    */
-  useSpeechRecognitionEvent("result", (event) => {
+  useSpeechRecognitionEvent("result", async (event) => {
     if (event.isFinal && event.results.length > 0) {
       setTranscript(event.results[0].transcript.trim());
       setIsListening(false);
-      ExpoSpeechRecognitionModule.stop();
+      try {
+        await ExpoSpeechRecognitionModule.stop();
+      } catch (err) {
+        console.error("Speech recognition stop error:", err);
+      }
     }
   });
 
