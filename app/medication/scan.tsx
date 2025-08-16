@@ -34,6 +34,7 @@ import Svg, { Circle } from "react-native-svg";
 import CameraControls from "../../components/CameraControls";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
 import PanoramaCapture from "../../components/PanoramaCapture";
+import SinglePhotoCapture from "../../components/SinglePhotoCapture";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
@@ -50,6 +51,7 @@ import {
   cleanupAlternativeScanFiles,
 } from "../../utils/scanners/alternativeManager";
 import { PhotoStitchingScanner } from "../../utils/scanners/photoStitchingScanner";
+import { SinglePhotoScanner } from "../../utils/scanners/singlePhotoScanner";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
@@ -57,7 +59,7 @@ export default function ScanMedicationScreen() {
   const styles = createStyles(colorScheme);
   const router = useRouter();
   const { method } = useLocalSearchParams<{
-    method?: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto';
+    method?: 'photo_stitching' | 'single_photo'  | 'auto';
   }>();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
@@ -81,6 +83,7 @@ export default function ScanMedicationScreen() {
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
   const [showPanoramaCapture, setShowPanoramaCapture] = useState(false);
+  const [showSinglePhotoCapture, setShowSinglePhotoCapture] = useState(false);
   
   // Refs
   const cameraRef = useRef<CameraView | null>(null);
@@ -88,6 +91,7 @@ export default function ScanMedicationScreen() {
   const rotationTracker = useRef(new RotationTracker()).current;
   const frameAnalysisInterval = useRef<number | null>(null);
   const alternativeScanner = useRef(new AlternativeScanningManager()).current;
+  const singlePhotoScanner = useRef(new SinglePhotoScanner()).current;
   const isAnalyzingFrame = useRef(false);
   const recordingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isComponentMounted = useRef(true);
@@ -256,8 +260,13 @@ export default function ScanMedicationScreen() {
   };
 
   const handleAlternativeScan = async (
-    method: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto' = 'auto'
+    method: 'photo_stitching' | 'single_photo'  | 'auto' = 'auto'
   ) => {
+    if (method === 'single_photo') {
+      setShowFallbackOptions(false);
+      setShowSinglePhotoCapture(true);
+      return;
+    }
     let result;
     try {
       setProcessingMedia('photo');
@@ -335,10 +344,53 @@ export default function ScanMedicationScreen() {
     setShowFallbackOptions(true);
   };
 
+  const handleSinglePhotoResult = async (imageUri: string) => {
+    setShowSinglePhotoCapture(false);
+    let result;
+    try {
+      setProcessingMedia('photo');
+      setIsProcessing(true);
+      result = await singlePhotoScanner.performSinglePhotoScan(imageUri);
+      if (result.success && result.extractedText) {
+        const res = await handleParsedText(result.extractedText);
+        if (
+          res &&
+          res.data &&
+          res.data.parseMedicationLabel &&
+          res.data.parseMedicationLabel.data
+        ) {
+          await navigateToConfirmation(res.data.parseMedicationLabel.data);
+        } else {
+          setShowFallbackOptions(true);
+        }
+      } else {
+        setShowFallbackOptions(true);
+      }
+    } catch (err) {
+      console.error('Single photo scanning error:', err);
+      setShowFallbackOptions(true);
+    } finally {
+      if (result) {
+        await cleanupAlternativeScanFiles(result);
+      } else {
+        await FileSystem.deleteAsync(imageUri, { idempotent: true }).catch(() => {});
+      }
+      setIsProcessing(false);
+      setProcessingMedia(null);
+    }
+  };
+
+  const handleSinglePhotoCancel = () => {
+    setShowSinglePhotoCapture(false);
+    setShowFallbackOptions(true);
+  };
+
   useEffect(() => {
     if (method) {
       if (method === 'photo_stitching') {
         setShowPanoramaCapture(true);
+      } else if (method === 'single_photo') {
+        setShowSinglePhotoCapture(true);
       } else {
         handleAlternativeScan(method);
       }
@@ -663,6 +715,15 @@ console.log("Texts From clyindericalUnrap: =====================================
     );
   }
 
+  if (showSinglePhotoCapture) {
+    return (
+      <SinglePhotoCapture
+        onCaptureComplete={handleSinglePhotoResult}
+        onCancel={handleSinglePhotoCancel}
+      />
+    );
+  }
+
   if (showPanoramaCapture) {
     return (
       <PanoramaCapture
@@ -799,12 +860,6 @@ console.log("Texts From clyindericalUnrap: =====================================
               title="Single Photo"
               variant="secondary"
               onPress={() => handleAlternativeScan('single_photo')}
-              style={styles.fallbackButton}
-            />
-            <Button
-              title="Manual Guidance"
-              variant="secondary"
-              onPress={() => handleAlternativeScan('manual_guide')}
               style={styles.fallbackButton}
             />
             <Button
