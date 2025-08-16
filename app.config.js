@@ -41,6 +41,7 @@ export default {
           backgroundColor: '#ffffff',
         },
       ],
+      'react-native-edge-to-edge',
     ],
     experiments: {
       typedRoutes: true,

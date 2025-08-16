@@ -52,7 +52,7 @@ The MediTrack app already had a sophisticated cylindrical label scanning system:
 - Actionable improvement suggestions
 - Real-time quality indicators
 
-### 3. Alternative Scanning Methods (`alternativeScanning.ts`)
+### 3. Alternative Scanning Modules (`utils/scanners`)
 
 **Photo Stitching Scanner:**
 - Multi-photo capture sequence (typically 4 photos)

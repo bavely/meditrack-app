@@ -13,17 +13,9 @@ import ExpoMlkitOcr from "expo-mlkit-ocr";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from "expo-speech";
 import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
-import {
   Camera,
-  Flashlight,
-  FlashlightOff,
-  Info,
   Play,
   Square,
-  X,
 } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -39,14 +31,12 @@ import {
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import CameraControls from "../../components/CameraControls";
 import { CylindricalGuidanceOverlay } from "../../components/CylindricalGuidanceOverlay";
+import PanoramaCapture from "../../components/PanoramaCapture";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
-import {
-  AlternativeScanningManager,
-  cleanupAlternativeScanFiles,
-} from "../../utils/alternativeScanning";
 import {
   RotationTracker,
   analyzeFrameForBottle,
@@ -55,17 +45,25 @@ import {
   type ScanningMetrics
 } from "../../utils/bottleDetection";
 import { unwrapCylindricalLabel } from "../../utils/cylindricalUnwrap";
+import {
+  AlternativeScanningManager,
+  cleanupAlternativeScanFiles,
+} from "../../utils/scanners/alternativeManager";
+import { PhotoStitchingScanner } from "../../utils/scanners/photoStitchingScanner";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ScanMedicationScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const styles = createStyles(colorScheme);
   const router = useRouter();
-  const { method } = useLocalSearchParams<{ method?: string }>();
+  const { method } = useLocalSearchParams<{
+    method?: 'photo_stitching' | 'single_photo' | 'manual_guide' | 'auto';
+  }>();
   const { setParsedMedication } = useMedicationStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMedia, setProcessingMedia] = useState<"video" | "photo" | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [recordingStarted, setRecordingStarted] = useState(false);
@@ -82,7 +80,7 @@ export default function ScanMedicationScreen() {
     estimatedCompleteness: 0,
   });
   const [showFallbackOptions, setShowFallbackOptions] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [showPanoramaCapture, setShowPanoramaCapture] = useState(false);
   
   // Refs
   const cameraRef = useRef<CameraView | null>(null);
@@ -124,7 +122,6 @@ export default function ScanMedicationScreen() {
           console.log('Cleanup recording stop error:', error);
         }
       }
-      ExpoSpeechRecognitionModule.stop();
     };
   }, []);
 
@@ -207,6 +204,51 @@ export default function ScanMedicationScreen() {
     }
   };
 
+  function processPanoramaText(texts: string[]): string {
+    console.log("Processing panorama text:", texts);
+    if (!texts.length) return "";
+  
+    // Start with the first capture
+    let merged = texts[0].trim();
+  
+    // Helper: find the longest overlap between end of `a` and start of `b`
+    function findOverlap(a: string, b: string): number {
+      const maxLen = Math.min(a.length, b.length);
+      for (let len = maxLen; len > 0; len--) {
+        if (a.endsWith(b.slice(0, len))) {
+          return len;
+        }
+      }
+      return 0;
+    }
+  
+    for (let i = 1; i < texts.length; i++) {
+      const segment = texts[i].trim();
+      if (!segment) continue;
+  
+      // Compute overlap
+      const overlapLen = findOverlap(merged, segment);
+      // If overlap is substantial, merge; otherwise insert a line break
+      if (overlapLen > segment.split(/\s+/).slice(0, 3).join(" ").length / 2) {
+        merged = merged + segment.slice(overlapLen);
+      } else {
+        merged = merged + "\n" + segment;
+      }
+    }
+  
+    // Post-processing: collapse repeated lines
+    const lines = merged.split("\n");
+    const seen = new Set<string>();
+    const unique = lines.filter((line) => {
+      const key = line.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  
+    return unique.join("\n").trim();
+  }
+
   const handleNavigationError = (error: any) => {
     console.log("🧠 Parsed Text Error:", JSON.stringify(error));
     setIsProcessing(false);
@@ -218,6 +260,7 @@ export default function ScanMedicationScreen() {
   ) => {
     let result;
     try {
+      setProcessingMedia('photo');
       setIsProcessing(true);
       setShowFallbackOptions(false);
       result = await alternativeScanner.performAlternativeScan(method);
@@ -244,38 +287,20 @@ export default function ScanMedicationScreen() {
         await cleanupAlternativeScanFiles(result);
       }
       setIsProcessing(false);
+      setProcessingMedia(null);
     }
   };
 
-  const handleVoiceInput = async () => {
+  const handlePanoramaResult = async (images: string[]) => {
+    setShowPanoramaCapture(false);
+    let result;
     try {
-      if (!micPermission?.granted) {
-        const status = await requestMicPermission();
-        if (!status.granted) {
-          Alert.alert("Microphone permission required");
-          return;
-        }
-      }
-      setIsListening(true);
-      setShowFallbackOptions(false);
-      await ExpoSpeechRecognitionModule.start({
-        lang: "en-US",
-        interimResults: false,
-      });
-    } catch (error) {
-      console.error('Voice input error:', error);
-      setIsListening(false);
-      setShowFallbackOptions(true);
-    }
-  };
-
-  useSpeechRecognitionEvent("result", async (event) => {
-    if (event.isFinal && event.results.length > 0) {
-      const transcript = event.results[0].transcript;
-      setIsListening(false);
-      try {
-        setIsProcessing(true);
-        const res = await handleParsedText(transcript);
+      setProcessingMedia('photo');
+      setIsProcessing(true);
+      result = await PhotoStitchingScanner.process(images);
+      console.log("Panorama stitching result:", result);
+      if (result.success && result.extractedText) {
+        const res = await handleParsedText(result.extractedText);
         if (
           res &&
           res.data &&
@@ -286,36 +311,37 @@ export default function ScanMedicationScreen() {
         } else {
           setShowFallbackOptions(true);
         }
-      } catch (err) {
-        console.log('Speech processing error:', err);
+      } else {
         setShowFallbackOptions(true);
-      } finally {
-        setIsProcessing(false);
-        ExpoSpeechRecognitionModule.stop();
       }
+    } catch (err) {
+      console.error('Photo stitching error:', err);
+      setShowFallbackOptions(true);
+    } finally {
+      if (result) {
+        await cleanupAlternativeScanFiles(result);
+      } else {
+        for (const uri of images) {
+          await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+        }
+      }
+      setIsProcessing(false);
+      setProcessingMedia(null);
     }
-  });
+  };
 
-  useSpeechRecognitionEvent("error", () => {
-    setIsListening(false);
+  const handlePanoramaCancel = () => {
+    setShowPanoramaCapture(false);
     setShowFallbackOptions(true);
-  });
-
-  useSpeechRecognitionEvent("end", () => {
-    setIsListening(false);
-  });
+  };
 
   useEffect(() => {
-    if (!method) return;
-    if (
-      method === "photo_stitching" ||
-      method === "single_photo" ||
-      method === "manual_guide" ||
-      method === "auto"
-    ) {
-      handleAlternativeScan(method as any);
-    } else if (method === "voice") {
-      handleVoiceInput();
+    if (method) {
+      if (method === 'photo_stitching') {
+        setShowPanoramaCapture(true);
+      } else {
+        handleAlternativeScan(method);
+      }
     }
   }, [method]);
 
@@ -327,7 +353,7 @@ if (status === 'granted') {
   console.log('Saved to gallery');
 }
     console.log("Processing video URI:", uri);
-    let flattenedUri: string | null = null;
+    let flattenedUri: string[] | null = null;
     try {
       // Check if file exists and has size
       const fileInfo = await FileSystem.getInfoAsync(uri);
@@ -336,12 +362,22 @@ if (status === 'granted') {
       }
       
       console.log("Video file info:", fileInfo);
+      setProcessingMedia('video');
       setIsProcessing(true);
       flattenedUri = await unwrapCylindricalLabel(uri);
       console.log("Flattened label URI:", flattenedUri);
-      const recognized = await ExpoMlkitOcr.recognizeText(flattenedUri);
+      // Here logic will be changed to accept flattenedUri as an array
+
+          const texts = await Promise.all(flattenedUri.map(async (uri) => {
+      const response = await ExpoMlkitOcr.recognizeText(uri)
+      return response.text.trim();
+    }));
+console.log("Texts From clyindericalUnrap: ====================================================>", texts);
+    const recognized = await processPanoramaText(await Promise.all(texts));
+      // console.log("Flattened label URI:", flattenedUri);
+      // const recognized = await ExpoMlkitOcr.recognizeText(flattenedUri);
       console.log("OCR recognized text:", recognized);
-      const labelText = recognized.text.trim();
+      const labelText = recognized.trim();
       const res = await handleParsedText(labelText);
       if (
         res &&
@@ -358,14 +394,18 @@ if (status === 'granted') {
       await handleAlternativeScan('auto');
     } finally {
       try {
-        if (flattenedUri) {
-          await FileSystem.deleteAsync(flattenedUri, { idempotent: true });
+        if (flattenedUri?.length) {
+          flattenedUri.forEach((uri) => {
+            FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+          });
+          // await FileSystem.deleteAsync(flattenedUri, { idempotent: true });
         }
         await FileSystem.deleteAsync(uri, { idempotent: true });
       } catch (cleanupError) {
         console.warn("Failed to delete temp files:", cleanupError);
       }
       setIsProcessing(false);
+      setProcessingMedia(null);
     }
   };
 
@@ -623,6 +663,15 @@ if (status === 'granted') {
     );
   }
 
+  if (showPanoramaCapture) {
+    return (
+      <PanoramaCapture
+        onCaptureComplete={handlePanoramaResult}
+        onCancel={handlePanoramaCancel}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <CameraView
@@ -662,28 +711,38 @@ if (status === 'granted') {
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => router.back()}
-      >
-        <X size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.flashButton} 
-        onPress={toggleFlash}
-        disabled={isRecording || isProcessing}
-      >
-        {flashEnabled ? (
-          <Flashlight size={24} color="#FFD700" />
-        ) : (
-          <FlashlightOff size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.guidanceButton} onPress={toggleGuidance}>
-        <Info size={20} color={showGuidance ? "#00FF88" : "#FFFFFF"} />
-      </TouchableOpacity>
+      <CameraControls
+        onClose={() => router.back()}
+        onCapture={isRecording ? stopRecording : startRecording}
+        captureIcon={
+          isRecording ? (
+            <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
+          ) : (
+            <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
+          )
+        }
+        captureDisabled={
+          !isCameraReady || isProcessing || (isRecording && !canStopRecording)
+        }
+        captureActive={isRecording}
+        onToggleFlash={toggleFlash}
+        flashEnabled={flashEnabled}
+        flashDisabled={isRecording || isProcessing}
+        onToggleGuidance={toggleGuidance}
+        guidanceEnabled={showGuidance}
+        bottomLeft={
+          <TouchableOpacity
+            style={[
+              styles.flipButton,
+              (isRecording || isProcessing) && styles.disabledButton,
+            ]}
+            onPress={toggleCameraFacing}
+            disabled={isRecording || isProcessing}
+          >
+            <Camera size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Camera readiness indicator */}
       {!isCameraReady && (
@@ -692,41 +751,6 @@ if (status === 'granted') {
           <Text style={styles.cameraLoadingText}>Initializing camera...</Text>
         </View>
       )}
-
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={[
-            styles.flipButton,
-            (isRecording || isProcessing) && styles.disabledButton
-          ]}
-          onPress={toggleCameraFacing}
-          disabled={isRecording || isProcessing}
-        >
-          <Camera size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.captureButton,
-            (!isCameraReady || isProcessing || (isRecording && !canStopRecording)) &&
-              styles.disabledButton,
-            isRecording && styles.stopButton,
-          ]}
-          onPress={isRecording ? stopRecording : startRecording}
-          disabled={
-            !isCameraReady || isProcessing || (isRecording && !canStopRecording)
-          }
-        >
-          {isRecording ? (
-            <Square size={30} color="#FFFFFF" fill="#FFFFFF" />
-          ) : (
-            <Play size={30} color="#FFFFFF" fill="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.placeholderButton} />
-      </View>
-
       {/* Quality metrics during recording */}
       {isRecording && scanningMetrics.qualityScore > 0 && (
         <View style={styles.metricsContainer}>
@@ -741,20 +765,13 @@ if (status === 'granted') {
           <View style={styles.processingCard}>
             <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
             <Text style={styles.processingText}>
-              Processing captured video...
+              {processingMedia === 'video'
+                ? 'Processing captured video...'
+                : 'Processing photo...'}
             </Text>
             <Text style={styles.processingSubtext}>
               Unwrapping cylindrical label and extracting text
             </Text>
-          </View>
-        </View>
-      )}
-
-      {isListening && (
-        <View style={styles.processingOverlay}>
-          <View style={styles.processingCard}>
-            <ActivityIndicator color={Colors[colorScheme].tint} size="large" />
-            <Text style={styles.processingText}>Listening...</Text>
           </View>
         </View>
       )}
@@ -772,7 +789,10 @@ if (status === 'granted') {
             <Button
               title="Photo Stitching"
               variant="secondary"
-              onPress={() => handleAlternativeScan('photo_stitching')}
+              onPress={() => {
+                setShowFallbackOptions(false);
+                setShowPanoramaCapture(true);
+              }}
               style={styles.fallbackButton}
             />
             <Button
@@ -790,7 +810,7 @@ if (status === 'granted') {
             <Button
               title="Speak Label"
               variant="secondary"
-              onPress={handleVoiceInput}
+              onPress={() => router.push('/medication/voice')}
               style={styles.fallbackButton}
             />
             <Button
@@ -912,27 +932,6 @@ function createStyles(colorScheme: "light" | "dark") {
       marginTop: 10,
       fontSize: 14,
     },
-    controls: {
-      position: "absolute",
-      bottom: 40,
-      width: "100%",
-      flexDirection: "row",
-      justifyContent: "space-around",
-      alignItems: "center",
-    },
-    captureButton: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 4,
-      borderColor: "#FFFFFF",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.6)",
-    },
-    stopButton: {
-      backgroundColor: "#FF0000",
-    },
     disabledButton: {
       opacity: 0.5,
     },
@@ -940,34 +939,6 @@ function createStyles(colorScheme: "light" | "dark") {
       width: 60,
       height: 60,
       borderRadius: 30,
-      backgroundColor: "rgba(0,0,0,0.6)",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    placeholderButton: {
-      width: 60,
-      height: 60,
-    },
-    closeButton: {
-      position: "absolute",
-      top: 40,
-      left: 20,
-      zIndex: 2,
-    },
-    flashButton: {
-      position: "absolute",
-      top: 40,
-      right: 20,
-      zIndex: 2,
-    },
-    guidanceButton: {
-      position: "absolute",
-      top: 40,
-      right: 70,
-      zIndex: 2,
-      width: 40,
-      height: 40,
-      borderRadius: 20,
       backgroundColor: "rgba(0,0,0,0.6)",
       justifyContent: "center",
       alignItems: "center",

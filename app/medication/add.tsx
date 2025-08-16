@@ -84,7 +84,7 @@ export default function AddMedicationScreen() {
   };
 
   const handleSpeakLabelPress = () => {
-    router.push({ pathname: "/medication/scan", params: { method: "voice" } });
+    router.push("/medication/voice");
   };
 
   const handleAddManuallyPress = () => {
