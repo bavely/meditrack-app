@@ -1,10 +1,20 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useMicrophonePermissions } from "expo-camera";
+import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
-import { useState } from "react";
-import { ActivityIndicator, Alert, SafeAreaView, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import Button from "../../components/ui/Button";
 import { handleParsedText } from "../../services/medicationService";
 import { useMedicationStore } from "../../store/medication-store";
@@ -17,6 +27,12 @@ export default function MedicationVoiceScreen() {
   const { setParsedMedication } = useMedicationStore();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isListening, setIsListening] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   const startListening = async () => {
     try {
@@ -27,6 +43,13 @@ export default function MedicationVoiceScreen() {
           return;
         }
       }
+      setRecordedUri(null);
+      setTranscript("");
+      setHasPlayed(false);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
       setIsListening(true);
       await ExpoSpeechRecognitionModule.start({
         lang: "en-US",
@@ -38,26 +61,25 @@ export default function MedicationVoiceScreen() {
     }
   };
 
-  const stopListening = () => {
+  const stopListening = async () => {
     ExpoSpeechRecognitionModule.stop();
+    if (recording) {
+      try {
+        await recording.stopAndUnloadAsync();
+        setRecordedUri(recording.getURI());
+      } catch (err) {
+        console.log("Recording stop error:", err);
+      }
+    }
+    setRecording(null);
     setIsListening(false);
   };
 
-  useSpeechRecognitionEvent("result", async (event) => {
+  useSpeechRecognitionEvent("result", (event) => {
     if (event.isFinal && event.results.length > 0) {
-      const transcript = event.results[0].transcript;
-      try {
-        const res = await handleParsedText(transcript);
-        if (res?.data?.parseMedicationLabel?.data) {
-          setParsedMedication(res.data.parseMedicationLabel.data);
-          router.push("/medication/confirmation");
-        }
-      } catch (err) {
-        console.log("Speech processing error:", err);
-      } finally {
-        setIsListening(false);
-        ExpoSpeechRecognitionModule.stop();
-      }
+      setTranscript(event.results[0].transcript);
+      setIsListening(false);
+      ExpoSpeechRecognitionModule.stop();
     }
   });
 
@@ -69,10 +91,71 @@ export default function MedicationVoiceScreen() {
     setIsListening(false);
   });
 
+  const togglePlayback = async () => {
+    if (!recordedUri) return;
+    if (!sound) {
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri: recordedUri });
+      setSound(newSound);
+      await newSound.playAsync();
+      setIsPlaying(true);
+      setHasPlayed(true);
+    } else if (isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await sound.playAsync();
+      setIsPlaying(true);
+      setHasPlayed(true);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const res = await handleParsedText(transcript);
+      if (res?.data?.parseMedicationLabel?.data) {
+        setParsedMedication(res.data.parseMedicationLabel.data);
+        router.push("/medication/confirmation");
+      }
+    } catch (err) {
+      console.log("Speech processing error:", err);
+    }
+  };
+
+  const reRecord = async () => {
+    if (sound) {
+      await sound.unloadAsync();
+      setSound(null);
+    }
+    setRecordedUri(null);
+    setTranscript("");
+    setHasPlayed(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      sound?.unloadAsync();
+    };
+  }, [sound]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {isListening ? (
+        {recordedUri ? (
+          <>
+            <Button
+              title={isPlaying ? "Pause" : "Play"}
+              onPress={togglePlayback}
+              style={styles.button}
+            />
+            <Button
+              title="Submit"
+              onPress={handleSubmit}
+              disabled={!hasPlayed}
+              style={styles.button}
+            />
+            <Button title="Re-record" onPress={reRecord} style={styles.button} />
+          </>
+        ) : isListening ? (
           <>
             <View style={styles.indicator}>
               <ActivityIndicator color={Colors[colorScheme].tint} />
